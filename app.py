@@ -1,148 +1,294 @@
-from __future__ import annotations
-
-from pathlib import Path
-
-import pandas as pd
 import streamlit as st
+import pandas as pd
+import re
 
-from core import (
-    build_index,
-    export_resource_csv,
-    load_master_file,
-    module_options,
-    related_resources,
-    resource_details,
-    resource_options,
-    search_resources,
-    urls_for_resource,
-    preview_tables,
+st.set_page_config(
+    page_title="Access Resource Helper",
+    layout="wide"
 )
 
-APP_DIR = Path(__file__).resolve().parent
-DEFAULT_MASTER = APP_DIR / "data" / "master_access_file.txt"
+st.title("🔐 Access Resource Helper")
 
-st.set_page_config(page_title="Access Intelligence", layout="wide")
-st.title("Access Intelligence")
-st.caption("Pick a module or access resource and see what it controls.")
+st.markdown("Upload master access file")
 
-with st.sidebar:
-    st.header("Master file")
-    uploaded = st.file_uploader(
-        "Upload the master pipe file",
-        type=["txt", "csv", "tsv", "psv"],
-        help="Use the same file format as the one in the repo.",
-    )
-    st.markdown("Using the bundled master file if nothing is uploaded.")
-    st.markdown("---")
-    st.write("This app reads the master file directly and keeps the UI simple.")
-
-patterns, resources = load_master_file(uploaded, DEFAULT_MASTER)
-resources_index = build_index(patterns, resources)
-
-if patterns.empty or resources.empty:
-    st.error("No data found. Please upload the master file.")
-    st.stop()
-
-modules = module_options(resources)
-module_choice = st.selectbox("Module", modules if modules else ["All"])
-
-filtered_resources = resource_options(resources, module_choice)
-if filtered_resources.empty:
-    st.warning("No resources found for the selected module.")
-    st.stop()
-
-resource_labels = {
-    int(row["id"]): f"{int(row['id'])} — {row.get('friendly_label', row.get('name', 'Access'))}"
-    for _, row in filtered_resources.iterrows()
-}
-
-chosen_id = st.selectbox(
-    "Access resource",
-    options=list(resource_labels.keys()),
-    format_func=lambda rid: resource_labels.get(rid, str(rid)),
+uploaded_file = st.file_uploader(
+    "Upload Master File",
+    type=["txt", "csv"]
 )
 
-details = resource_details(chosen_id, patterns, resources)
-urls = details["urls"]
-related = related_resources(chosen_id, patterns, resources, limit=12)
+if uploaded_file:
 
-tab1, tab2, tab3, tab4 = st.tabs(["Access view", "Search", "Master preview", "Export"])
+    content = uploaded_file.read().decode("utf-8")
 
-with tab1:
-    left, right = st.columns([1.2, 1])
-    with left:
-        st.subheader(details["friendly_label"])
-        st.write(details["description"])
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Access ID", details["id"])
-        c2.metric("Routes", details["url_count"])
-        c3.metric("Module", details.get("level") or "-")
-        st.write(f"**Raw name:** {details.get('name') or '-'}")
-        st.write(f"**Group ID:** {details.get('group_id') or '-'}")
-        if details.get("keywords"):
-            st.write("**Keywords:** " + ", ".join(details["keywords"]))
-    with right:
-        st.subheader("What it helps in")
-        if urls.empty:
-            st.info("No URLs found for this access resource.")
+    lines = content.splitlines()
+
+    access_resources = []
+    url_mappings = []
+
+    # -------------------------
+    # PARSE MASTER FILE
+    # -------------------------
+
+    for line in lines:
+
+        parts = [p.strip() for p in line.split("|")]
+
+        if len(parts) < 2:
+            continue
+
+        # URL Mapping
+        if "/" in line:
+
+            try:
+                access_id = int(parts[0])
+                url = parts[1]
+
+                url_mappings.append({
+                    "access_id": access_id,
+                    "url": url
+                })
+
+            except:
+                pass
+
+        # Access Resource Master
         else:
-            for u in urls["url_pattern"].tolist():
-                st.code(u, language="text")
 
-    st.subheader("Related access resources")
-    if related.empty:
-        st.info("No close related resources found.")
-    else:
-        st.dataframe(
-            related[["id", "friendly_label", "name", "level", "group_id", "score"]],
-            use_container_width=True,
-            hide_index=True,
+            try:
+                access_id = int(parts[0])
+
+                access_name = parts[1]
+
+                module = ""
+
+                if len(parts) >= 4:
+                    module = parts[3]
+
+                access_resources.append({
+                    "access_id": access_id,
+                    "access_name": access_name,
+                    "module": module
+                })
+
+            except:
+                pass
+
+    access_df = pd.DataFrame(access_resources)
+    url_df = pd.DataFrame(url_mappings)
+
+    # -------------------------
+    # MERGE
+    # -------------------------
+
+    merged_df = pd.merge(
+        url_df,
+        access_df,
+        on="access_id",
+        how="left"
+    )
+
+    # -------------------------
+    # CREATE MAJOR ACTIVITY
+    # -------------------------
+
+    def extract_major(url):
+
+        parts = url.strip("/").split("/")
+
+        for p in parts:
+
+            if p in [
+                "data",
+                "oms",
+                "v2",
+                "api",
+                "internal"
+            ]:
+                continue
+
+            if len(p) > 2:
+                return p.replace("-", " ").title()
+
+        return "Other"
+
+    merged_df["major_activity"] = merged_df["url"].apply(
+        extract_major
+    )
+
+    # -------------------------
+    # CREATE SUB ACTIVITY
+    # -------------------------
+
+    def extract_sub(url):
+
+        url = url.lower()
+
+        if "create" in url:
+            action = "Create"
+        elif "search" in url:
+            action = "Search"
+        elif "open" in url:
+            action = "Open"
+        elif "edit" in url:
+            action = "Edit"
+        elif "cancel" in url:
+            action = "Cancel"
+        elif "close" in url:
+            action = "Close"
+        elif "approve" in url:
+            action = "Approve"
+        elif "manifest" in url:
+            action = "Manifest"
+        else:
+            action = "Manage"
+
+        parts = url.strip("/").split("/")
+
+        subject = ""
+
+        for p in parts[::-1]:
+
+            if p not in [
+                "create",
+                "search",
+                "open",
+                "edit",
+                "cancel",
+                "close",
+                "approve",
+                "data",
+                "oms",
+                "api",
+                "v2"
+            ]:
+                subject = p.replace("-", " ").title()
+                break
+
+        return f"{action} {subject}"
+
+    merged_df["sub_activity"] = merged_df["url"].apply(
+        extract_sub
+    )
+
+    # -------------------------
+    # DROPDOWN 1
+    # -------------------------
+
+    major_options = sorted(
+        merged_df["major_activity"].dropna().unique()
+    )
+
+    selected_major = st.selectbox(
+        "Select Major Activity",
+        major_options
+    )
+
+    # -------------------------
+    # FILTER
+    # -------------------------
+
+    filtered_major = merged_df[
+        merged_df["major_activity"] == selected_major
+    ]
+
+    # -------------------------
+    # DROPDOWN 2
+    # -------------------------
+
+    sub_options = sorted(
+        filtered_major["sub_activity"].dropna().unique()
+    )
+
+    selected_sub = st.selectbox(
+        "Select Sub Activity",
+        sub_options
+    )
+
+    # -------------------------
+    # FINAL DATA
+    # -------------------------
+
+    final_df = filtered_major[
+        filtered_major["sub_activity"] == selected_sub
+    ]
+
+    if not final_df.empty:
+
+        first_row = final_df.iloc[0]
+
+        st.divider()
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.metric(
+                "Access Resource ID",
+                first_row["access_id"]
+            )
+
+        with col2:
+            st.metric(
+                "Access Name",
+                first_row["access_name"]
+            )
+
+        with col3:
+            st.metric(
+                "Module",
+                first_row["module"]
+            )
+
+        # -------------------------
+        # HELPS IN
+        # -------------------------
+
+        st.subheader("✅ What This Access Helps In")
+
+        helps = final_df["sub_activity"].unique()
+
+        for h in helps:
+            st.write(f"- {h}")
+
+        # -------------------------
+        # URLS
+        # -------------------------
+
+        st.subheader("🌐 Related URLs / APIs")
+
+        urls = final_df["url"].unique()
+
+        for u in urls:
+            st.code(u)
+
+        # -------------------------
+        # SUMMARY
+        # -------------------------
+
+        st.subheader("🧠 Summary")
+
+        summary = f"""
+        Access `{first_row['access_id']} - {first_row['access_name']}`
+        belongs to module `{first_row['module']}`.
+
+        This access helps in:
+        {", ".join(helps)}.
+        """
+
+        st.info(summary)
+
+        # -------------------------
+        # DOWNLOAD CSV
+        # -------------------------
+
+        csv = final_df.to_csv(index=False).encode("utf-8")
+
+        st.download_button(
+            "⬇ Download CSV",
+            csv,
+            file_name="access_resource.csv",
+            mime="text/csv"
         )
 
-with tab2:
-    st.subheader("Search by activity, URL, or access ID")
-    query = st.text_input("Search", placeholder="create gatepass / /material / 85")
-    limit = st.slider("Results", 5, 25, 10)
-    if query.strip():
-        results = search_resources(query, patterns, resources, limit=limit)
-        if results.empty:
-            st.info("No match found.")
-        else:
-            for _, row in results.iterrows():
-                with st.expander(f"{row['id']} — {row.get('friendly_label', row.get('name', 'Access'))} | {row.get('level', '-')}", expanded=(row["score"] >= 20)):
-                    st.write(f"Raw name: {row.get('name', '-')}")
-                    st.write(f"Routes: {row.get('url_count', 0)}")
-                    if row.get("sample_urls"):
-                        st.write("Sample URLs")
-                        for u in row["sample_urls"]:
-                            st.code(u, language="text")
+else:
 
-with tab3:
-    st.subheader("How the master file is being used")
-    p, r = preview_tables(patterns, resources, n=25)
-    c1, c2 = st.columns(2)
-    with c1:
-        st.write("Access patterns")
-        st.dataframe(p, use_container_width=True, hide_index=True)
-    with c2:
-        st.write("Access resources")
-        st.dataframe(r, use_container_width=True, hide_index=True)
-
-    st.markdown("### Simple rule")
-    st.write("One access resource ID can control many URL routes. This app shows all of them together.")
-
-with tab4:
-    st.subheader("Download one access as CSV")
-    export_df = export_resource_csv(chosen_id, patterns, resources)
-    st.dataframe(export_df, use_container_width=True, hide_index=True)
-
-    csv = export_df.to_csv(index=False).encode("utf-8")
-    st.download_button(
-        "Download CSV",
-        csv,
-        file_name=f"access_{chosen_id}.csv",
-        mime="text/csv",
-    )
-
-st.markdown("---")
-st.caption("Built for a single master file with both the URL mappings and the access-resource master table.")
+    st.warning("Please upload master access file.")
