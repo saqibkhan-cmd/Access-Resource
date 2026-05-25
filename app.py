@@ -1,6 +1,5 @@
 # app.py
-# FINAL WORKING VERSION
-# NO LOCAL FILE PATH REQUIRED
+# FINAL PRODUCTION READY VERSION
 
 # RUN:
 # pip install streamlit pandas
@@ -45,35 +44,72 @@ def load_access_patterns(file):
 
     rows = []
 
-    lines = file.read().decode("utf-8", errors="ignore").splitlines()
+    try:
 
-    for line in lines:
+        content = file.read().decode(
+            "utf-8",
+            errors="ignore"
+        )
 
-        if "|" not in line:
-            continue
+        lines = content.splitlines()
 
-        try:
+        for line in lines:
 
-            parts = [x.strip() for x in line.split("|")]
+            line = line.strip()
 
-            if len(parts) < 3:
+            if not line:
                 continue
 
-            id_val = parts[0]
-            access_resource_id = parts[1]
-            url_pattern = parts[2]
+            # auto detect separator
+            separator = None
 
-            if not id_val.isdigit():
+            if "|" in line:
+                separator = "|"
+
+            elif "," in line:
+                separator = ","
+
+            elif "\t" in line:
+                separator = "\t"
+
+            if separator is None:
                 continue
 
-            rows.append({
-                "id": int(id_val),
-                "access_resource_id": int(access_resource_id),
-                "url_pattern": url_pattern
-            })
+            try:
 
-        except:
-            continue
+                parts = [
+                    x.strip()
+                    for x in line.split(separator)
+                ]
+
+                # skip malformed rows
+                if len(parts) < 3:
+                    continue
+
+                url_pattern = parts[-1]
+
+                # find numeric values safely
+                numeric_parts = [
+                    p for p in parts
+                    if p.isdigit()
+                ]
+
+                if len(numeric_parts) < 2:
+                    continue
+
+                rows.append({
+                    "id": numeric_parts[0],
+                    "access_resource_id": numeric_parts[1],
+                    "url_pattern": url_pattern
+                })
+
+            except:
+                continue
+
+    except Exception as e:
+
+        st.error(f"File parsing failed: {e}")
+        return pd.DataFrame()
 
     return pd.DataFrame(rows)
 
@@ -84,12 +120,56 @@ def load_access_patterns(file):
 df = load_access_patterns(uploaded_file)
 
 # =====================================================
+# VALIDATION
+# =====================================================
+
+if df.empty:
+
+    st.error(
+        "No valid access patterns found in file."
+    )
+
+    st.write("Preview of uploaded file:")
+
+    uploaded_file.seek(0)
+
+    preview = uploaded_file.read().decode(
+        "utf-8",
+        errors="ignore"
+    )[:3000]
+
+    st.code(preview)
+
+    st.stop()
+
+required_columns = [
+    "id",
+    "access_resource_id",
+    "url_pattern"
+]
+
+missing_columns = [
+    col for col in required_columns
+    if col not in df.columns
+]
+
+if missing_columns:
+
+    st.error(
+        f"Missing required columns: {missing_columns}"
+    )
+
+    st.dataframe(df.head())
+
+    st.stop()
+
+# =====================================================
 # IDENTIFY MODULE
 # =====================================================
 
 def identify_module(url):
 
-    url = url.lower()
+    url = str(url).lower()
 
     if "/oms/" in url:
         return "OMS"
@@ -123,15 +203,17 @@ def identify_module(url):
 
     return "Others"
 
-df["module"] = df["url_pattern"].apply(identify_module)
+df["module"] = df["url_pattern"].apply(
+    identify_module
+)
 
 # =====================================================
-# CLEAN ACCESS NAME
+# ACCESS NAME
 # =====================================================
 
 def clean_access_name(url):
 
-    text = url
+    text = str(url)
 
     text = text.replace("/", " ")
     text = text.replace("_", " ")
@@ -142,15 +224,17 @@ def clean_access_name(url):
 
     return text.strip().title()
 
-df["access_name"] = df["url_pattern"].apply(clean_access_name)
+df["access_name"] = df["url_pattern"].apply(
+    clean_access_name
+)
 
 # =====================================================
-# PURPOSE GENERATOR
+# PURPOSE
 # =====================================================
 
 def generate_purpose(url):
 
-    url = url.lower()
+    url = str(url).lower()
 
     if "create" in url:
         return "Allows creation operations"
@@ -171,13 +255,13 @@ def generate_purpose(url):
         return "Allows getting data"
 
     elif "cancel" in url:
-        return "Allows cancellation operation"
+        return "Allows cancellation operations"
 
     elif "approve" in url:
-        return "Allows approval operation"
+        return "Allows approval operations"
 
     elif "manifest" in url:
-        return "Allows shipment manifest operations"
+        return "Allows manifest operations"
 
     elif "picklist" in url:
         return "Allows picklist operations"
@@ -187,7 +271,9 @@ def generate_purpose(url):
 
     return "General access operation"
 
-df["purpose"] = df["url_pattern"].apply(generate_purpose)
+df["purpose"] = df["url_pattern"].apply(
+    generate_purpose
+)
 
 # =====================================================
 # ACCESS TYPE
@@ -195,22 +281,29 @@ df["purpose"] = df["url_pattern"].apply(generate_purpose)
 
 def access_type(url):
 
-    url = url.lower()
+    url = str(url).lower()
 
-    if any(x in url for x in [
+    write_keywords = [
         "create",
         "edit",
         "update",
         "cancel",
         "approve",
         "discard",
-        "allocate"
-    ]):
-        return "WRITE"
+        "allocate",
+        "delete"
+    ]
+
+    for keyword in write_keywords:
+
+        if keyword in url:
+            return "WRITE"
 
     return "READ"
 
-df["access_type"] = df["url_pattern"].apply(access_type)
+df["access_type"] = df["url_pattern"].apply(
+    access_type
+)
 
 # =====================================================
 # SIMILARITY
@@ -218,13 +311,18 @@ df["access_type"] = df["url_pattern"].apply(access_type)
 
 def similarity(a, b):
 
-    return SequenceMatcher(None, a, b).ratio()
+    return SequenceMatcher(
+        None,
+        str(a),
+        str(b)
+    ).ratio()
 
 # =====================================================
-# ACTIVITY KEYWORDS
+# ACTIVITY MAP
 # =====================================================
 
 activity_map = {
+
     "cancel order": [
         "cancel",
         "saleorder",
@@ -281,24 +379,34 @@ activity_map = {
 
 def get_matching_access(activity):
 
-    activity = activity.lower()
+    activity = str(activity).lower()
 
     matched_keywords = []
 
     for activity_name, keywords in activity_map.items():
 
-        if similarity(activity, activity_name) > 0.45:
+        if similarity(
+            activity,
+            activity_name
+        ) > 0.45:
+
             matched_keywords.extend(keywords)
 
-    matched_keywords.extend(activity.split())
+    matched_keywords.extend(
+        activity.split()
+    )
 
-    matched_keywords = list(set(matched_keywords))
+    matched_keywords = list(
+        set(matched_keywords)
+    )
 
     results = []
 
     for _, row in df.iterrows():
 
-        url = row["url_pattern"].lower()
+        url = str(
+            row["url_pattern"]
+        ).lower()
 
         keyword_score = 0
 
@@ -307,23 +415,44 @@ def get_matching_access(activity):
             if keyword in url:
                 keyword_score += 20
 
-        fuzzy_score = similarity(activity, url) * 100
+        fuzzy_score = similarity(
+            activity,
+            url
+        ) * 100
 
-        total_score = keyword_score + fuzzy_score
+        total_score = (
+            keyword_score +
+            fuzzy_score
+        )
 
         if total_score > 20:
 
             results.append({
-                "score": round(total_score, 2),
+
+                "score": round(
+                    total_score,
+                    2
+                ),
+
                 "module": row["module"],
-                "access_resource_id": row["access_resource_id"],
-                "url_pattern": row["url_pattern"],
-                "access_name": row["access_name"],
-                "purpose": row["purpose"],
-                "access_type": row["access_type"]
+
+                "access_resource_id":
+                row["access_resource_id"],
+
+                "url_pattern":
+                row["url_pattern"],
+
+                "access_name":
+                row["access_name"],
+
+                "purpose":
+                row["purpose"],
+
+                "access_type":
+                row["access_type"]
             })
 
-    if len(results) == 0:
+    if not results:
         return pd.DataFrame()
 
     result_df = pd.DataFrame(results)
@@ -345,36 +474,46 @@ def get_matching_access(activity):
 
 activity_input = st.text_input(
     "Enter Activity",
-    placeholder="Example: cancel order, shipment manifest, inventory allocation"
+    placeholder="Example: cancel order"
 )
 
 # =====================================================
-# SEARCH BUTTON
+# SEARCH
 # =====================================================
 
 if st.button("Find Required Access"):
 
     if not activity_input.strip():
 
-        st.warning("Please enter an activity")
+        st.warning(
+            "Please enter an activity"
+        )
 
     else:
 
-        results = get_matching_access(activity_input)
+        results = get_matching_access(
+            activity_input
+        )
 
         if results.empty():
 
-            st.error("No matching access resources found")
+            st.error(
+                "No matching access found"
+            )
 
         else:
 
             st.success(
-                f"{len(results)} matching access resources identified"
+                f"{len(results)} matching accesses identified"
             )
 
-            for module in results["module"].unique():
+            for module in results[
+                "module"
+            ].unique():
 
-                st.markdown(f"## {module}")
+                st.markdown(
+                    f"## {module}"
+                )
 
                 module_df = results[
                     results["module"] == module
@@ -382,37 +521,63 @@ if st.button("Find Required Access"):
 
                 for _, row in module_df.iterrows():
 
-                    with st.expander(row["access_name"]):
+                    with st.expander(
+                        row["access_name"]
+                    ):
 
                         col1, col2 = st.columns(2)
 
                         with col1:
 
-                            st.markdown("### URL Pattern")
-                            st.code(row["url_pattern"])
+                            st.markdown(
+                                "### URL Pattern"
+                            )
 
-                            st.markdown("### Access Resource ID")
-                            st.code(row["access_resource_id"])
+                            st.code(
+                                row["url_pattern"]
+                            )
+
+                            st.markdown(
+                                "### Access Resource ID"
+                            )
+
+                            st.code(
+                                row["access_resource_id"]
+                            )
 
                         with col2:
 
-                            st.markdown("### Purpose")
-                            st.info(row["purpose"])
+                            st.markdown(
+                                "### Purpose"
+                            )
 
-                            st.markdown("### Access Type")
-                            st.success(row["access_type"])
+                            st.info(
+                                row["purpose"]
+                            )
+
+                            st.markdown(
+                                "### Access Type"
+                            )
+
+                            st.success(
+                                row["access_type"]
+                            )
 
 # =====================================================
 # RAW DATA
 # =====================================================
 
-with st.expander("View Raw Access Data"):
+with st.expander(
+    "View Parsed Data"
+):
 
-    st.dataframe(df)
+    st.dataframe(df.head(100))
 
 # =====================================================
 # FOOTER
 # =====================================================
 
 st.markdown("---")
-st.caption("Activity → Access Resource Intelligence Engine")
+st.caption(
+    "Activity → Access Resource Intelligence Engine"
+)
