@@ -1,38 +1,52 @@
 import streamlit as st
 import pandas as pd
 import os
+import glob
 
 # Set Page Config
 st.set_page_config(page_title="Access Resource Automation", layout="wide", page_icon="🔐")
 
 @st.cache_data
 def get_processed_df():
-    """
-    Reads the file locally from the GitHub folder and processes 
-    it into the Major/Sub-Major hierarchy.
-    """
-    file_path = "access_patterns (2).txt"
+    # 1. SMART FILE FINDER
+    # This looks for any .txt file in your repo that contains "access" or "pattern"
+    possible_files = glob.glob("*.txt")
+    target_file = None
     
-    if not os.path.exists(file_path):
-        return pd.DataFrame() # Return empty if file is missing
+    # Priority 1: Exact match you mentioned
+    if os.path.exists("access_patterns (2).txt"):
+        target_file = "access_patterns (2).txt"
+    # Priority 2: Any file containing the keywords
+    else:
+        for f in possible_files:
+            if "access" in f.lower() or "pattern" in f.lower():
+                target_file = f
+                break
 
-    with open(file_path, 'r') as f:
-        lines = f.readlines()
+    if not target_file:
+        return pd.DataFrame(), None
+
+    try:
+        with open(target_file, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+    except Exception as e:
+        return pd.DataFrame(), f"Error reading file: {e}"
     
     patterns = []
     resources = {}
     
-    # 1. Parse the text file (URLs and Resource Names)
+    # 2. PARSE THE TEXT FILE
     for line in lines:
         parts = [p.strip() for p in line.split('|') if p.strip() != '']
         if len(parts) >= 3 and parts[0].isdigit():
-            # Check if it's a URL path or a Resource Definition
+            # Match URLs
             if parts[2].startswith('/'): 
                 patterns.append({"res_id": parts[1], "url": parts[2]})
+            # Match Resource Definitions
             elif parts[1].isupper() or "_" in parts[1]: 
                 resources[parts[0]] = parts[1]
                 
-    # 2. Match URLs to Names and Build Hierarchy
+    # 3. BUILD HIERARCHY
     data = []
     for p in patterns:
         res_name = resources.get(p['res_id'], f"ID_{p['res_id']}")
@@ -48,64 +62,52 @@ def get_processed_df():
             "res_id": p['res_id']
         })
         
-    return pd.DataFrame(data)
+    return pd.DataFrame(data), target_file
 
 # --- UI LOGIC ---
 st.title("🔐 Access Resource Automation Tool")
-st.markdown("### Activity-to-Resource Mapping")
 
-# Load the data automatically from the file in the repo
-df = get_processed_df()
+# Load data
+df, found_filename = get_processed_df()
 
 if df.empty:
-    st.error(f"Error: 'access_patterns (2).txt' not found in the repository. Please upload it to GitHub.")
+    st.error("❌ No access pattern file found in the repository.")
+    st.write("### Debugging Steps:")
+    st.write(f"1. Ensure your file is in the **root** folder of your GitHub repository (not in a subfolder).")
+    st.write(f"2. Check the filename. Currently, I see these files in your repo: `{os.listdir('.')}`")
 else:
-    # --- SIDEBAR FILTERS ---
-    st.sidebar.header("Filter Activities")
+    st.success(f"✅ Loaded data from: **{found_filename}**")
+    st.markdown("---")
 
-    # 1. Major Activity Filter
+    # --- FILTERS ---
+    st.sidebar.header("Filter Activities")
     major_list = sorted(df['Major'].unique())
-    sel_major = st.sidebar.selectbox("1. Select Major Activity", ["All"] + major_list)
+    sel_major = st.sidebar.selectbox("1. Major Activity", ["All"] + major_list)
 
     filtered_df = df.copy()
-    
     if sel_major != "All":
         filtered_df = filtered_df[filtered_df['Major'] == sel_major]
-        
-        # 2. Sub-Major Activity Filter
         sub_major_list = sorted(filtered_df['SubMajor'].unique())
-        sel_sub = st.sidebar.selectbox(f"2. Select Sub-Major", ["All"] + sub_major_list)
+        sel_sub = st.sidebar.selectbox("2. Sub-Major", ["All"] + sub_major_list)
         
         if sel_sub != "All":
             filtered_df = filtered_df[filtered_df['SubMajor'] == sel_sub]
-            
-            # 3. Sub-Sub Activity Filter
             sub_sub_list = sorted(filtered_df['SubSub'].unique())
-            sel_sub_sub = st.sidebar.selectbox("3. Select Sub-Sub Activity", ["All"] + sub_sub_list)
+            sel_sub_sub = st.sidebar.selectbox("3. Sub-Sub Activity", ["All"] + sub_sub_list)
             
             if sel_sub_sub != "All":
                 filtered_df = filtered_df[filtered_df['SubSub'] == sel_sub_sub]
 
-    # --- MAIN DISPLAY ---
-    st.subheader(f"Results ({len(filtered_df)} Activities Found)")
+    # --- DISPLAY ---
+    st.subheader(f"Results ({len(filtered_df)} Activities)")
     
-    # Cleaning table for display
     display_df = filtered_df[['Major', 'SubMajor', 'SubSub', 'Action', 'res_name', 'res_id']]
     display_df.columns = ['Major', 'Sub-Major', 'Sub-Sub Major', 'Action/Detail', 'Access Resource Name', 'Resource ID']
     
     st.dataframe(display_df, use_container_width=True, hide_index=True)
 
-    # Summary Box
+    # Summary
     if not filtered_df.empty:
         unique_resources = filtered_df['Access Resource Name'].unique()
-        st.info("💡 **Summary:** To perform the selected activities, the following resources are required:")
-        for res in unique_resources:
-            st.code(res)
-
-    # Search Feature
-    st.divider()
-    search = st.text_input("🔍 Search by keyword (e.g. 'gatepass', 'invoice', 'create')")
-    if search:
-        search_results = df[df.apply(lambda row: row.astype(str).str.contains(search, case=False).any(), axis=1)]
-        st.write(f"Search Results for '{search}':")
-        st.dataframe(search_results[['url', 'res_name']], use_container_width=True, hide_index=True)
+        st.info("💡 **Summary:** Permissions required for selection:")
+        st.write(", ".join([f"`{r}`" for r in unique_resources]))
