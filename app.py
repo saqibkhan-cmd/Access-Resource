@@ -1,413 +1,388 @@
-import streamlit as st
-import pandas as pd
+# app.py
+# Activity -> Access Resource Intelligence Engine
+# Run:
+# pip install streamlit pandas rapidfuzz openai
+# streamlit run app.py
 
-# -----------------------------------
+import re
+import pandas as pd
+import streamlit as st
+from rapidfuzz import fuzz
+from collections import defaultdict
+
+# =========================
+# CONFIG
+# =========================
+
+FILE_PATH = "access_patterns (2).txt"
+
+# =========================
 # PAGE CONFIG
-# -----------------------------------
+# =========================
 
 st.set_page_config(
-    page_title="Access Resource Helper",
+    page_title="Access Resource Intelligence Engine",
     layout="wide"
 )
 
-st.title("🔐 Access Resource Helper")
+st.title("Access Resource Intelligence Engine")
+st.caption("Activity → Required Access Mapping Automation")
 
-st.markdown(
-    "Upload your master access file to explore all access resources, activities, URLs, and modules."
-)
+# =========================
+# LOAD FILE
+# =========================
 
-# -----------------------------------
-# FILE UPLOAD
-# -----------------------------------
+@st.cache_data
+def load_access_patterns(file_path):
 
-uploaded_file = st.file_uploader(
-    "Upload Master Access File",
-    type=["txt", "csv"]
-)
+    rows = []
 
-# -----------------------------------
-# MAIN LOGIC
-# -----------------------------------
+    with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+        lines = f.readlines()
 
-if uploaded_file:
+    for line in lines:
 
-    try:
+        if "|" not in line:
+            continue
 
-        # -----------------------------------
-        # READ FILE
-        # -----------------------------------
+        try:
+            parts = [x.strip() for x in line.split("|")]
 
-        content = uploaded_file.read().decode(
-            "utf-8",
-            errors="ignore"
-        )
-
-        lines = content.splitlines()
-
-        access_resources = []
-        url_mappings = []
-
-        # -----------------------------------
-        # PARSE FILE
-        # -----------------------------------
-
-        for line in lines:
-
-            line = line.strip()
-
-            if not line:
+            if len(parts) < 3:
                 continue
 
-            if "|" not in line:
+            id_val = parts[0]
+            access_resource_id = parts[1]
+            url_pattern = parts[2]
+
+            if not id_val.isdigit():
                 continue
 
-            parts = [p.strip() for p in line.split("|")]
+            rows.append({
+                "id": int(id_val),
+                "access_resource_id": int(access_resource_id),
+                "url_pattern": url_pattern
+            })
 
-            # -----------------------------------
-            # URL MAPPING
-            # -----------------------------------
+        except:
+            continue
 
-            if "/" in line:
+    df = pd.DataFrame(rows)
 
-                try:
+    return df
 
-                    access_id = int(parts[0])
 
-                    url = parts[1]
+df = load_access_patterns(FILE_PATH)
 
-                    if url:
+# =========================
+# MODULE IDENTIFICATION
+# =========================
 
-                        url_mappings.append({
-                            "access_id": access_id,
-                            "url": url
-                        })
+def identify_module(url):
 
-                except:
-                    continue
+    url = url.lower()
 
-            # -----------------------------------
-            # ACCESS RESOURCE MASTER
-            # -----------------------------------
+    if "/oms/" in url:
+        return "OMS"
 
-            else:
+    elif "/shipping" in url:
+        return "Shipping"
 
-                try:
+    elif "/returns" in url:
+        return "Returns"
 
-                    access_id = int(parts[0])
+    elif "/reports" in url:
+        return "Reports"
 
-                    access_name = parts[1]
+    elif "/procure" in url or "/po/" in url:
+        return "Procurement"
 
-                    module = ""
+    elif "/inflow" in url:
+        return "Inflow"
 
-                    if len(parts) > 3:
-                        module = parts[3]
+    elif "/putaway" in url:
+        return "Putaway"
 
-                    access_resources.append({
-                        "access_id": access_id,
-                        "access_name": access_name,
-                        "module": module
-                    })
+    elif "/admin" in url:
+        return "Admin"
 
-                except:
-                    continue
+    elif "/catalog" in url or "/products" in url:
+        return "Catalog"
 
-        # -----------------------------------
-        # CREATE DATAFRAMES
-        # -----------------------------------
+    elif "/tasks" in url:
+        return "Tasks"
 
-        access_df = pd.DataFrame(access_resources)
-        url_df = pd.DataFrame(url_mappings)
+    return "Others"
 
-        # -----------------------------------
-        # VALIDATION
-        # -----------------------------------
 
-        if access_df.empty:
-            st.error("No access resource data found.")
-            st.stop()
+df["module"] = df["url_pattern"].apply(identify_module)
 
-        if url_df.empty:
-            st.error("No URL mapping data found.")
-            st.stop()
+# =========================
+# URL TO HUMAN READABLE
+# =========================
 
-        # -----------------------------------
-        # MERGE
-        # -----------------------------------
+def clean_url_to_text(url):
 
-        merged_df = pd.merge(
-            url_df,
-            access_df,
-            on="access_id",
-            how="left"
-        )
+    text = url
 
-        # -----------------------------------
-        # CLEAN NULLS
-        # -----------------------------------
+    text = text.replace("/", " ")
+    text = text.replace("_", " ")
+    text = text.replace("-", " ")
 
-        merged_df["access_name"] = merged_df["access_name"].fillna("UNKNOWN")
-        merged_df["module"] = merged_df["module"].fillna("UNKNOWN")
+    text = re.sub(r"\*", "", text)
 
-        # -----------------------------------
-        # CREATE MAJOR ACTIVITY
-        # -----------------------------------
+    text = re.sub(r"\s+", " ", text)
 
-        def extract_major(url):
+    return text.strip().title()
 
-            ignore = [
-                "data",
-                "oms",
-                "api",
-                "v2",
-                "internal"
-            ]
 
-            parts = url.strip("/").split("/")
+df["access_name"] = df["url_pattern"].apply(clean_url_to_text)
 
-            for p in parts:
+# =========================
+# PURPOSE GENERATOR
+# =========================
 
-                p = p.lower()
+def generate_purpose(url):
 
-                if p not in ignore and len(p) > 2:
-                    return p.replace("-", " ").title()
+    url = url.lower()
 
-            return "Other"
+    if "create" in url:
+        return "Allows creation operation"
 
-        merged_df["major_activity"] = merged_df["url"].apply(
-            extract_major
-        )
+    elif "edit" in url or "update" in url:
+        return "Allows modification operation"
 
-        # -----------------------------------
-        # CREATE SUB ACTIVITY
-        # -----------------------------------
+    elif "search" in url:
+        return "Allows searching records"
 
-        def extract_sub(url):
+    elif "fetch" in url or "get" in url:
+        return "Allows fetching/viewing data"
 
-            url_lower = url.lower()
+    elif "cancel" in url:
+        return "Allows cancellation operation"
 
-            actions = [
-                "create",
-                "search",
-                "open",
-                "edit",
-                "cancel",
-                "close",
-                "approve",
-                "update",
-                "delete",
-                "generate",
-                "assign",
-                "manifest",
-                "print"
-            ]
+    elif "approve" in url:
+        return "Allows approval operation"
 
-            action = "Manage"
+    elif "manifest" in url:
+        return "Allows shipment manifest operations"
 
-            for a in actions:
+    elif "picklist" in url:
+        return "Allows picklist operations"
 
-                if a in url_lower:
-                    action = a.title()
-                    break
+    elif "invoice" in url:
+        return "Allows invoice operations"
 
-            parts = url.strip("/").split("/")
+    return "General access operation"
 
-            ignore = actions + [
-                "data",
-                "oms",
-                "api",
-                "v2",
-                "internal"
-            ]
 
-            subject = "Activity"
+df["purpose"] = df["url_pattern"].apply(generate_purpose)
 
-            for p in reversed(parts):
+# =========================
+# ACTIVITY KEYWORDS
+# =========================
 
-                p_lower = p.lower()
+activity_keywords = {
+    "cancel order": [
+        "cancel",
+        "saleorder",
+        "order"
+    ],
 
-                if p_lower not in ignore and len(p_lower) > 2:
+    "shipment manifest": [
+        "manifest",
+        "shipping",
+        "shipment"
+    ],
 
-                    subject = p.replace("-", " ").title()
-                    break
+    "picklist creation": [
+        "picklist",
+        "picker",
+        "picking"
+    ],
 
-            return f"{action} {subject}"
+    "inventory management": [
+        "inventory",
+        "item",
+        "catalog"
+    ],
 
-        merged_df["sub_activity"] = merged_df["url"].apply(
-            extract_sub
-        )
+    "returns processing": [
+        "returns",
+        "reversepickup",
+        "reshipment"
+    ],
 
-        # -----------------------------------
-        # SIDEBAR
-        # -----------------------------------
+    "purchase order": [
+        "po",
+        "procure",
+        "purchase"
+    ],
 
-        st.sidebar.header("Filters")
+    "reports": [
+        "reports",
+        "search"
+    ],
 
-        # -----------------------------------
-        # MAJOR ACTIVITY DROPDOWN
-        # -----------------------------------
+    "user management": [
+        "user",
+        "users",
+        "admin/system/user"
+    ],
 
-        major_options = sorted(
-            merged_df["major_activity"].dropna().unique()
-        )
+    "shipping allocation": [
+        "shipping",
+        "allocate",
+        "awb"
+    ]
+}
 
-        selected_major = st.sidebar.selectbox(
-            "Select Major Activity",
-            major_options
-        )
+# =========================
+# ACTIVITY MATCHER
+# =========================
 
-        filtered_major = merged_df[
-            merged_df["major_activity"] == selected_major
-        ]
+def get_matching_access(activity):
 
-        # -----------------------------------
-        # SUB ACTIVITY DROPDOWN
-        # -----------------------------------
+    activity = activity.lower()
 
-        sub_options = sorted(
-            filtered_major["sub_activity"].dropna().unique()
-        )
+    matched_rows = []
 
-        selected_sub = st.sidebar.selectbox(
-            "Select Sub Activity",
-            sub_options
-        )
+    matched_keywords = []
 
-        # -----------------------------------
-        # ACCESS DROPDOWN
-        # -----------------------------------
+    # direct activity keyword mapping
+    for activity_name, keywords in activity_keywords.items():
 
-        access_options = sorted(
-            filtered_major["access_name"].dropna().unique()
-        )
+        score = fuzz.partial_ratio(activity, activity_name)
 
-        selected_access = st.sidebar.selectbox(
-            "Select Access Resource",
-            access_options
-        )
+        if score > 70:
+            matched_keywords.extend(keywords)
 
-        # -----------------------------------
-        # FINAL FILTER
-        # -----------------------------------
+    # add words from user query
+    matched_keywords.extend(activity.split())
 
-        final_df = filtered_major[
-            (filtered_major["sub_activity"] == selected_sub)
-            &
-            (filtered_major["access_name"] == selected_access)
-        ]
+    matched_keywords = list(set(matched_keywords))
 
-        if final_df.empty:
-            st.warning("No matching data found.")
-            st.stop()
+    for _, row in df.iterrows():
 
-        # -----------------------------------
-        # FIRST ROW
-        # -----------------------------------
+        url = row["url_pattern"].lower()
 
-        row = final_df.iloc[0]
+        score = 0
 
-        # -----------------------------------
-        # HEADER METRICS
-        # -----------------------------------
+        for keyword in matched_keywords:
 
-        st.subheader("📌 Access Details")
+            if keyword in url:
+                score += 10
 
-        col1, col2, col3 = st.columns(3)
+        fuzzy_score = fuzz.partial_ratio(activity, url)
 
-        with col1:
-            st.metric(
-                "Access Resource ID",
-                row["access_id"]
-            )
+        final_score = score + fuzzy_score
 
-        with col2:
-            st.metric(
-                "Access Name",
-                row["access_name"]
-            )
+        if final_score > 40:
 
-        with col3:
-            st.metric(
-                "Module",
-                row["module"]
-            )
+            matched_rows.append({
+                "score": final_score,
+                "module": row["module"],
+                "access_resource_id": row["access_resource_id"],
+                "url_pattern": row["url_pattern"],
+                "access_name": row["access_name"],
+                "purpose": row["purpose"]
+            })
 
-        # -----------------------------------
-        # HELPS IN
-        # -----------------------------------
+    result_df = pd.DataFrame(matched_rows)
 
-        st.subheader("✅ What This Access Helps In")
+    if len(result_df) == 0:
+        return pd.DataFrame()
 
-        helps = sorted(
-            final_df["sub_activity"].unique()
-        )
+    result_df = result_df.sort_values(
+        by="score",
+        ascending=False
+    )
 
-        for h in helps:
-            st.write(f"- {h}")
+    result_df = result_df.drop_duplicates(
+        subset=["url_pattern"]
+    )
 
-        # -----------------------------------
-        # RELATED URLS
-        # -----------------------------------
+    return result_df.head(25)
 
-        st.subheader("🌐 Related URLs / APIs")
+# =========================
+# UI
+# =========================
 
-        urls = sorted(
-            final_df["url"].unique()
-        )
+activity_input = st.text_input(
+    "Enter Activity",
+    placeholder="Example: cancel order, create manifest, inventory allocation"
+)
 
-        for u in urls:
-            st.code(u)
+if activity_input:
 
-        # -----------------------------------
-        # SUMMARY
-        # -----------------------------------
+    result = get_matching_access(activity_input)
 
-        st.subheader("🧠 Summary")
+    st.subheader("Recommended Access Resources")
 
-        summary = f"""
-        Access Resource ID: {row['access_id']}
+    if result.empty:
 
-        Access Name: {row['access_name']}
+        st.warning("No matching access resources found")
 
-        Module: {row['module']}
+    else:
 
-        This access helps in:
-        {", ".join(helps)}
-        """
+        st.success(f"{len(result)} matching access resources identified")
 
-        st.info(summary)
+        for module in result["module"].unique():
 
-        # -----------------------------------
-        # DOWNLOAD CSV
-        # -----------------------------------
+            module_df = result[result["module"] == module]
 
-        csv = final_df.to_csv(index=False).encode("utf-8")
+            st.markdown(f"## {module}")
 
-        st.download_button(
-            "⬇ Download CSV",
-            csv,
-            file_name="access_resource_data.csv",
-            mime="text/csv"
-        )
+            for _, row in module_df.iterrows():
 
-        # -----------------------------------
-        # RAW DATA
-        # -----------------------------------
+                with st.expander(row["access_name"]):
 
-        with st.expander("📄 View Raw Data"):
+                    st.write(f"### URL Pattern")
+                    st.code(row["url_pattern"])
 
-            st.dataframe(
-                final_df,
-                use_container_width=True
-            )
+                    st.write(f"### Access Resource ID")
+                    st.code(row["access_resource_id"])
 
-    except Exception as e:
+                    st.write(f"### Purpose")
+                    st.info(row["purpose"])
 
-        st.error(f"Error: {str(e)}")
+# =========================
+# SIDEBAR
+# =========================
 
-# -----------------------------------
-# NO FILE
-# -----------------------------------
+st.sidebar.header("Quick Activities")
 
-else:
+quick_activities = [
+    "cancel order",
+    "shipment manifest",
+    "picklist creation",
+    "inventory management",
+    "returns processing",
+    "purchase order",
+    "shipping allocation"
+]
 
-    st.info("Please upload your master access file.")
+for qa in quick_activities:
+
+    if st.sidebar.button(qa):
+
+        result = get_matching_access(qa)
+
+        st.subheader(f"Results for: {qa}")
+
+        st.dataframe(result)
+
+# =========================
+# RAW DATA VIEW
+# =========================
+
+with st.expander("View Raw Access Data"):
+
+    st.dataframe(df)
+
+# =========================
+# FOOTER
+# =========================
+
+st.markdown("---")
+st.caption("Built for Activity → Access Resource Intelligence Automation")
