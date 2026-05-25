@@ -1,9 +1,8 @@
 # app.py
-# READY TO RUN VERSION
-# NO rapidfuzz dependency
-# Works directly with your uploaded file
+# FINAL WORKING VERSION
+# NO LOCAL FILE PATH REQUIRED
 
-# RUN COMMAND:
+# RUN:
 # pip install streamlit pandas
 # streamlit run app.py
 
@@ -11,12 +10,6 @@ import re
 import pandas as pd
 import streamlit as st
 from difflib import SequenceMatcher
-
-# =====================================================
-# CONFIG
-# =====================================================
-
-FILE_PATH = "access_patterns (2).txt"
 
 # =====================================================
 # PAGE CONFIG
@@ -31,16 +24,28 @@ st.title("Access Resource Intelligence Engine")
 st.caption("Activity → Required Access Resource Automation")
 
 # =====================================================
+# FILE UPLOAD
+# =====================================================
+
+uploaded_file = st.file_uploader(
+    "Upload Access Pattern File",
+    type=["txt", "csv"]
+)
+
+if uploaded_file is None:
+    st.info("Please upload the access pattern file")
+    st.stop()
+
+# =====================================================
 # LOAD FILE
 # =====================================================
 
 @st.cache_data
-def load_access_patterns(file_path):
+def load_access_patterns(file):
 
     rows = []
 
-    with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-        lines = f.readlines()
+    lines = file.read().decode("utf-8", errors="ignore").splitlines()
 
     for line in lines:
 
@@ -76,13 +81,7 @@ def load_access_patterns(file_path):
 # LOAD DATA
 # =====================================================
 
-try:
-    df = load_access_patterns(FILE_PATH)
-
-except Exception as e:
-
-    st.error(f"Error loading file: {e}")
-    st.stop()
+df = load_access_patterns(uploaded_file)
 
 # =====================================================
 # IDENTIFY MODULE
@@ -137,7 +136,6 @@ def clean_access_name(url):
     text = text.replace("/", " ")
     text = text.replace("_", " ")
     text = text.replace("-", " ")
-
     text = text.replace("*", "")
 
     text = re.sub(r"\s+", " ", text)
@@ -215,7 +213,7 @@ def access_type(url):
 df["access_type"] = df["url_pattern"].apply(access_type)
 
 # =====================================================
-# STRING MATCH
+# SIMILARITY
 # =====================================================
 
 def similarity(a, b):
@@ -223,7 +221,7 @@ def similarity(a, b):
     return SequenceMatcher(None, a, b).ratio()
 
 # =====================================================
-# ACTIVITY MAPPING KEYWORDS
+# ACTIVITY KEYWORDS
 # =====================================================
 
 activity_map = {
@@ -278,7 +276,7 @@ activity_map = {
 }
 
 # =====================================================
-# SEARCH ENGINE
+# MATCH ENGINE
 # =====================================================
 
 def get_matching_access(activity):
@@ -287,13 +285,11 @@ def get_matching_access(activity):
 
     matched_keywords = []
 
-    # mapped keywords
     for activity_name, keywords in activity_map.items():
 
         if similarity(activity, activity_name) > 0.45:
             matched_keywords.extend(keywords)
 
-    # direct query words
     matched_keywords.extend(activity.split())
 
     matched_keywords = list(set(matched_keywords))
@@ -344,7 +340,7 @@ def get_matching_access(activity):
     return result_df.head(30)
 
 # =====================================================
-# UI
+# USER INPUT
 # =====================================================
 
 activity_input = st.text_input(
@@ -376,9 +372,7 @@ if st.button("Find Required Access"):
                 f"{len(results)} matching access resources identified"
             )
 
-            grouped_modules = results["module"].unique()
-
-            for module in grouped_modules:
+            for module in results["module"].unique():
 
                 st.markdown(f"## {module}")
 
@@ -409,33 +403,6 @@ if st.button("Find Required Access"):
                             st.success(row["access_type"])
 
 # =====================================================
-# QUICK SEARCHES
-# =====================================================
-
-st.sidebar.header("Quick Activities")
-
-quick_activities = [
-    "cancel order",
-    "shipment manifest",
-    "picklist creation",
-    "inventory allocation",
-    "returns processing",
-    "purchase order",
-    "shipping allocation",
-    "invoice"
-]
-
-for item in quick_activities:
-
-    if st.sidebar.button(item):
-
-        results = get_matching_access(item)
-
-        st.subheader(f"Results for: {item}")
-
-        st.dataframe(results)
-
-# =====================================================
 # RAW DATA
 # =====================================================
 
@@ -448,6 +415,4 @@ with st.expander("View Raw Access Data"):
 # =====================================================
 
 st.markdown("---")
-st.caption(
-    "Built for Activity → Access Resource Intelligence Automation"
-)
+st.caption("Activity → Access Resource Intelligence Engine")
