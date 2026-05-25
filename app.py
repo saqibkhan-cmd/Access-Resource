@@ -96,4 +96,106 @@ def get_consolidated_database():
         "GRNs": "PROCUREMENT_VIEW",
         "Gate Entry": "INBOUND_GATEPASS",
         "Create Label": "INFLOW_GRN_CREATE_LABELS",
-        "Quality Check": "J
+        "Quality Check": "JABONG_QC",
+        "Create PO Labels": "MINIMAL",
+        "Item Details": "ITEM_DETAIL",
+        "Search PO": "SEARCH_ACTIVE_PO",
+        "Vendor Invoices": "VENDOR_INVOICE",
+        "Manifests": "MANIFEST",
+        "Edit Manifest": "MANIFEST",
+        "Gatepass": "MATERIAL_MANAGEMENT",
+        "Gatepass Order": "VIEW_GATEPASSORDER",
+        "View/Edit Order": "LOOKUP_SALE_ORDER",
+        "Create Order": "CREATE_ORDER",
+        "Orders": "ORDERS",
+        "Failed Orders": "CHANNEL_ORDER",
+        "Picklists": "PICKLIST_VIEW",
+        "Manual Picklist": "PICKLIST_MANUAL_CREATE",
+        "View/Edit Picklist": "PICKLIST_VIEW"
+    }
+
+    # 3. BUILD THE FINAL DATABASE
+    master_data = []
+    for p in patterns:
+        res_name = resources.get(p['res_id'], f"ID_{p['res_id']}")
+        url_raw = p['url'].strip()
+        segments = [s.upper() for s in url_raw.split('/') if s]
+        
+        # Match UI Tab Name if it exists in the extracted document mapping
+        ui_tab = next((tab for tab, res in sidebar_mapping.items() if res == res_name), "System Background Process")
+        
+        # Extract meaningful Activity Name
+        if len(segments) >= 3:
+            major = segments[2]
+            sub = segments[1]
+        elif len(segments) == 2:
+            major = segments[1]
+            sub = segments[0]
+        else:
+            major = segments[0] if segments else "ROOT"
+            sub = "CORE"
+            
+        master_data.append({
+            "UI_TAB_NAME": ui_tab,
+            "MAJOR_ACTIVITY": major,
+            "SUB_MODULE": sub,
+            "ACCESS_RESOURCE": res_name,
+            "URL_PATTERN": url_raw
+        })
+        
+    return pd.DataFrame(master_data), target_file
+
+# --- APP UI ---
+st.title("🛡️ Uniware Access & Sidebar Consolidated Auditor")
+st.markdown("### Integrated view of Sidebar Menu items, URL Patterns, and Required Resources")
+
+df, filename = get_consolidated_database()
+
+if df is None or df.empty:
+    st.error("Critical Error: Master text file not found.")
+else:
+    # --- SEARCH & NAVIGATION ---
+    st.sidebar.header("🔍 Global Search")
+    st.sidebar.info("Search by Sidebar Tab Name or Activity")
+    
+    # UI Tab Filter (from the Word Doc)
+    all_tabs = sorted([t for t in df['UI_TAB_NAME'].unique() if t != "System Background Process"])
+    selected_tab = st.sidebar.selectbox("Filter by Sidebar Menu Tab", ["ALL TABS"] + all_tabs + ["System Background Process"])
+
+    # System Activity Filter (from the URL Path)
+    all_activities = sorted(df['MAJOR_ACTIVITY'].unique())
+    selected_act = st.sidebar.selectbox("Filter by System Activity", ["ALL ACTIVITIES"] + all_activities)
+
+    # Multi-level filtering
+    filtered_df = df.copy()
+    if selected_tab != "ALL TABS":
+        filtered_df = filtered_df[filtered_df['UI_TAB_NAME'] == selected_tab]
+    if selected_act != "ALL ACTIVITIES":
+        filtered_df = filtered_df[filtered_df['MAJOR_ACTIVITY'] == selected_act]
+
+    # --- RESULTS DISPLAY ---
+    st.write(f"📊 Displaying **{len(filtered_df)}** associated system patterns.")
+
+    # Main Data Table
+    st.dataframe(
+        filtered_df[['UI_TAB_NAME', 'MAJOR_ACTIVITY', 'SUB_MODULE', 'ACCESS_RESOURCE', 'URL_PATTERN']], 
+        use_container_width=True, 
+        hide_index=True
+    )
+
+    # Permission Summary (Audit Details)
+    if not filtered_df.empty and (selected_tab != "ALL TABS" or selected_act != "ALL ACTIVITIES"):
+        st.divider()
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader("🔑 Security Requirements")
+            for res in filtered_df['ACCESS_RESOURCE'].unique():
+                st.code(res)
+        with col2:
+            st.subheader("🌐 Involved System Paths")
+            for url in filtered_df['URL_PATTERN'].unique()[:10]: # Limit preview
+                st.text(url)
+
+    # Download
+    csv = filtered_df.to_csv(index=False).encode('utf-8')
+    st.sidebar.download_button("📥 Export Audit View", csv, "consolidated_access.csv", "text/csv")
