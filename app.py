@@ -18,6 +18,12 @@ st.title("🛡️ Uniware Access Resource Auditor")
 st.caption("Search access resources by activity, URL, or resource id")
 
 # =====================================================
+# FILE PATH
+# =====================================================
+
+FILE_PATH = "access_patterns (2).txt"
+
+# =====================================================
 # CONSTANTS
 # =====================================================
 
@@ -96,12 +102,6 @@ def humanize_url(url: str) -> str:
     return " / ".join(split_camel(part).title() for part in url.split("/") if part)
 
 def extract_activity(url: str) -> str:
-    """
-    Returns the last meaningful activity/action:
-    /data/catalog/addTag -> Add Tag
-    /data/catalog/get/categories -> Get Categories
-    /products/add -> Add
-    """
     url = str(url).strip()
     parts = [p for p in url.strip("/").split("/") if p]
     if not parts:
@@ -181,26 +181,18 @@ def make_search_blob(df: pd.DataFrame) -> pd.Series:
         df["access_type"].astype(str)
     ).str.lower()
 
-def expand_query_tokens(query: str) -> list[str]:
-    tokens = re.findall(r"[a-zA-Z0-9]+", normalize_text(query))
-    expanded = []
-    for token in tokens:
-        expanded.extend(SYNONYMS.get(token, [token]))
-    # preserve order, unique
-    seen = set()
-    out = []
-    for t in expanded:
-        if t not in seen:
-            out.append(t)
-            seen.add(t)
-    return out
-
-def safe_ratio(a: str, b: str) -> float:
-    return SequenceMatcher(None, str(a), str(b)).ratio()
-
 @st.cache_data
-def parse_access_file(file_bytes: bytes) -> pd.DataFrame:
-    raw = file_bytes.decode("utf-8", errors="ignore")
+def parse_access_file(file_path: str) -> pd.DataFrame:
+    try:
+        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+            raw = f.read()
+    except FileNotFoundError:
+        st.error(f"File not found: {file_path}")
+        st.stop()
+    except Exception as e:
+        st.error(f"Could not read file: {e}")
+        st.stop()
+
     rows = []
 
     for line in raw.splitlines():
@@ -212,11 +204,9 @@ def parse_access_file(file_bytes: bytes) -> pd.DataFrame:
         if len(parts) < 3:
             continue
 
-        # skip header rows
         if parts[0].lower() == "id":
             continue
 
-        # expected table: id | access_resource_id | url_pattern | created | updated
         if not parts[0].isdigit() or not parts[1].isdigit():
             continue
 
@@ -247,6 +237,22 @@ def parse_access_file(file_bytes: bytes) -> pd.DataFrame:
     df = df.drop_duplicates(subset=["access_resource_id", "url_pattern"]).reset_index(drop=True)
     return df
 
+def expand_query_tokens(query: str) -> list[str]:
+    tokens = re.findall(r"[a-zA-Z0-9]+", normalize_text(query))
+    expanded = []
+    for token in tokens:
+        expanded.extend(SYNONYMS.get(token, [token]))
+    seen = set()
+    out = []
+    for t in expanded:
+        if t not in seen:
+            out.append(t)
+            seen.add(t)
+    return out
+
+def safe_ratio(a: str, b: str) -> float:
+    return SequenceMatcher(None, str(a), str(b)).ratio()
+
 def rule_boost(row: pd.Series, rules_df: pd.DataFrame) -> tuple[int, str | None]:
     blob = normalize_text(f"{row['url_pattern']} {row['activity']} {row['module']} {row['access_resource_id']}")
     best_label = None
@@ -274,7 +280,6 @@ def score_row(query: str, row: pd.Series, rules_df: pd.DataFrame) -> tuple[float
     blob = row["search_blob"]
 
     score = 0.0
-
     if not q:
         return 0.0, row["activity"]
 
@@ -320,7 +325,7 @@ def search_access(query: str, df: pd.DataFrame, rules_df: pd.DataFrame) -> pd.Da
         if score >= 20:
             matched.append(
                 {
-                    "score": round(score, 1),
+                    "confidence": round(score, 1),
                     "access_resource_id": row["access_resource_id"],
                     "resource_label": row["resource_label"],
                     "activity": label,
@@ -337,11 +342,10 @@ def search_access(query: str, df: pd.DataFrame, rules_df: pd.DataFrame) -> pd.Da
 
     raw = pd.DataFrame(matched)
 
-    # Combine all URLs under the same access resource so combinations stay correct
     grouped = (
         raw.groupby(["access_resource_id", "resource_label"], as_index=False)
         .agg(
-            confidence=("score", "max"),
+            confidence=("confidence", "max"),
             activity=("activity", lambda s: " • ".join(sorted(set(map(str, s))))),
             access_type=("access_type", lambda s: " / ".join(sorted(set(map(str, s))))),
             module=("module", lambda s: " / ".join(sorted(set(map(str, s))))),
@@ -360,11 +364,10 @@ def overlap_map(filtered_df: pd.DataFrame) -> pd.DataFrame:
     if filtered_df.empty:
         return pd.DataFrame()
 
-    tmp = (
+    return (
         filtered_df.groupby(["activity", "access_resource_id"], as_index=False)
         .agg(url_count=("url_pattern", "nunique"))
     )
-    return tmp
 
 def grouped_summary(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
@@ -398,22 +401,13 @@ def build_request_text(activity: str, missing_resources: list[int], missing_df: 
     return "\n".join(lines)
 
 # =====================================================
-# FILE UPLOAD
+# LOAD DATA
 # =====================================================
 
-uploaded_file = st.file_uploader(
-    "Upload access pattern file",
-    type=["txt", "csv"]
-)
-
-if uploaded_file is None:
-    st.info("Upload the file that contains the access pattern rows.")
-    st.stop()
-
-df = parse_access_file(uploaded_file.getvalue())
+df = parse_access_file(FILE_PATH)
 
 if df.empty:
-    st.error("No valid rows were found in the uploaded file.")
+    st.error("No valid rows were found in the access pattern file.")
     st.stop()
 
 # =====================================================
@@ -424,7 +418,7 @@ st.sidebar.header("Search")
 
 search_query = st.sidebar.text_input(
     "Search by activity, URL, or resource id",
-    placeholder="Try: create tag, add tag, /data/catalog/addTag, 459"
+    placeholder="Try: create tag, add customer, /data/catalog/addTag, 459"
 )
 
 quick_terms = [
@@ -478,15 +472,14 @@ st.sidebar.header("Favorites")
 favorites = st.session_state.favorites
 if favorites:
     favorite_pick = st.sidebar.selectbox("Saved activities", [""] + favorites)
-    if favorite_pick:
+    if favorite_pick and st.sidebar.button("Search favorite"):
         st.session_state["search_query"] = favorite_pick
-        if st.sidebar.button("Search favorite"):
-            st.rerun()
+        st.rerun()
 else:
     st.sidebar.caption("No saved favorites yet.")
 
 # =====================================================
-# MAIN TABS
+# TABS
 # =====================================================
 
 tab_search, tab_compare, tab_manage = st.tabs(["Search", "Compare", "Rules & Downloads"])
@@ -499,8 +492,8 @@ with tab_search:
     st.subheader("Search results")
 
     query = search_query.strip()
-    filtered_df = df.copy()
 
+    filtered_df = df.copy()
     if selected_access_types:
         filtered_df = filtered_df[filtered_df["access_type"].isin(selected_access_types)]
     if selected_modules:
@@ -523,9 +516,7 @@ with tab_search:
         st.warning("No matches found. Try a shorter query or a different keyword.")
     elif query:
         st.dataframe(
-            results[
-                ["confidence", "access_resource_id", "resource_label", "activity", "access_type", "pattern_count"]
-            ],
+            results[["confidence", "access_resource_id", "resource_label", "activity", "access_type", "pattern_count"]],
             use_container_width=True,
             hide_index=True
         )
@@ -537,6 +528,7 @@ with tab_search:
                 "Focus on one result",
                 results["activity"].tolist()
             )
+
             focus_row = results[results["activity"] == activity_filter_choice].head(1)
             if not focus_row.empty:
                 r = focus_row.iloc[0]
@@ -604,7 +596,6 @@ with tab_search:
                     missing_resources=missing_ids,
                     missing_df=filtered_df
                 )
-
                 st.text_area("Access request helper", value=request_text, height=220)
 
     if show_grouped and not filtered_df.empty:
@@ -644,9 +635,7 @@ with tab_compare:
         height=160
     )
 
-    compare_button = st.button("Compare activities")
-
-    if compare_button:
+    if st.button("Compare activities"):
         activities = [x.strip() for x in bulk_text.splitlines() if x.strip()]
         if not activities:
             st.warning("Add at least one activity.")
