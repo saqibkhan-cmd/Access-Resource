@@ -1,295 +1,333 @@
+"""
+Uniware Access Resource Auditor  —  consolidated final build
+=============================================================
+Source A  ·  Access Pattern Dump   (1,180 URL patterns joined to resource names)
+Source B  ·  Left Sidebar Mapping  (132 sidebar nav items from Confluence doc)
+
+How the txt file is parsed
+  Table 1  id | access_resource_id | url_pattern | created | updated
+  Table 2  id | name (UPPER_SNAKE) | group_id    | level
+  Joined on access_resource_id = Table2.id  →  every URL gets its resource name.
+"""
+
 import re
+import glob
 from difflib import SequenceMatcher
+from email import policy
+from email.parser import BytesParser
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 from bs4 import BeautifulSoup
-from email import policy
-from email.parser import BytesParser
 
-# =====================================================
-# PAGE CONFIG
-# =====================================================
-
+# ─────────────────────────────────────────────────────────────────────────────
+# CONFIG
+# ─────────────────────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="Uniware Access Resource Auditor",
+    page_title="Uniware Access Auditor",
+    page_icon="🛡️",
     layout="wide",
-    page_icon="🛡️"
 )
 
-st.title("🛡️ Uniware Access Resource Auditor")
-st.caption("Search access resources by activity, URL, access resource name, or resource id")
+# Auto-locate files (works regardless of exact filename variant)
+def _find_file(patterns: list[str]) -> str:
+    for pat in patterns:
+        hits = glob.glob(pat, recursive=False)
+        if hits:
+            return hits[0]
+    return patterns[0]          # return first pattern as fallback (will show error)
 
-TXT_FILE = "access_patterns (2)(2).txt"
-DOC_FILE = "Access+resource+associated+with+uniware+layout+left+side+bar.doc"
+TXT_FILE = _find_file(["access_patterns*.txt", "access_pattern*.txt"])
+DOC_FILE = _find_file([
+    "Access_resource_associated_with_uniware_layout_left_side_bar.doc",
+    "Access+resource+associated+with+uniware+layout+left+side+bar.doc",
+    "*sidebar*.doc", "*layout*.doc",
+])
 
-# =====================================================
-# HELPERS
-# =====================================================
+# ─────────────────────────────────────────────────────────────────────────────
+# STYLES
+# ─────────────────────────────────────────────────────────────────────────────
+st.markdown("""
+<style>
+.block-container { padding-top: 1.4rem; padding-bottom: 2rem; }
+h1  { font-size: 1.6rem !important; font-weight: 700; margin-bottom: 0 !important; }
+h3  { font-size: 1.05rem !important; font-weight: 600; margin-top: 1rem; }
 
-VERBS = [
-    "create", "add", "edit", "update", "remove", "delete", "cancel",
-    "approve", "search", "fetch", "get", "view", "show", "print",
-    "preview", "export", "import", "assign", "allocate", "open",
-    "close", "complete", "receive", "reject", "hold", "unhold",
-    "upload", "download", "discard", "save", "submit", "split"
-]
-
-SYSTEM_WORDS = {
-    "data", "admin", "oms", "catalog", "reports", "procure",
-    "shipping", "returns", "tasks", "putaway", "inflow", "material",
-    "system", "layout", "printing", "picklogic", "picker", "packer",
-    "channel", "products", "product", "orders", "order", "meta", "lookup",
-    "configure", "dashboard", "staging", "customers", "customer", "grns",
-    "vendor", "batching", "bill", "materials", "search", "view", "show"
+.stTabs [data-baseweb="tab-list"] {
+    gap: 0; border-bottom: 2px solid #e0e4ea; background: transparent;
+}
+.stTabs [data-baseweb="tab"] {
+    font-size: 0.95rem; font-weight: 600; padding: 0.5rem 1.4rem;
+    border-radius: 0; color: #555;
+    border-bottom: 3px solid transparent; margin-bottom: -2px;
+    background: transparent !important;
+}
+.stTabs [aria-selected="true"] {
+    color: #1a73e8 !important;
+    border-bottom: 3px solid #1a73e8 !important;
+    background: transparent !important;
 }
 
-def normalize_text(text: str) -> str:
-    text = str(text).lower().strip()
-    text = text.replace("-", " ").replace("_", " ")
-    text = re.sub(r"\s+", " ", text)
-    return text
+.stTextInput > div > div > input {
+    font-size: 1rem; border-radius: 8px;
+    padding: 0.5rem 0.9rem; border: 1.5px solid #c8d0dc;
+}
+.stTextInput > div > div > input:focus {
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 3px rgba(26,115,232,0.12);
+}
 
-def split_camel(text: str) -> str:
-    text = str(text).replace("-", " ").replace("_", " ")
-    text = re.sub(r"([a-z])([A-Z])", r"\1 \2", text)
-    text = re.sub(r"\s+", " ", text).strip()
-    return text
+[data-testid="metric-container"] {
+    background: #f7f9fc; border: 1px solid #e4e8ef;
+    border-radius: 10px; padding: 10px 16px;
+}
+[data-testid="metric-container"] label            { font-size: 0.75rem !important; color: #666 !important; }
+[data-testid="metric-container"] [data-testid="stMetricValue"] { font-size: 1.5rem !important; font-weight: 700; }
 
-def titleize_segment(seg: str) -> str:
-    return split_camel(seg).title().strip()
+.stDataFrame { border-radius: 10px; overflow: hidden; border: 1px solid #e4e8ef; }
 
-def is_intish(value) -> bool:
-    try:
-        return str(value).strip().isdigit()
-    except Exception:
-        return False
+.info-box {
+    background: #f0f4ff; border-left: 4px solid #1a73e8;
+    border-radius: 0 8px 8px 0; padding: 10px 16px;
+    font-size: 0.87rem; color: #2c3e50; margin-bottom: 10px;
+}
+.res-pill {
+    display: inline-block; background: #e8eaf6; color: #283593;
+    padding: 2px 10px; border-radius: 99px;
+    font-size: 0.8rem; font-weight: 600; font-family: monospace; margin: 2px 2px;
+}
+.detail-card {
+    background: #f7f9fc; border: 1px solid #dce3ef;
+    border-radius: 10px; padding: 16px 20px; margin-top: 8px;
+}
+.detail-label {
+    font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.07em; color: #888; margin-bottom: 3px;
+}
+.detail-value {
+    font-size: 0.93rem; font-family: monospace;
+    background: #fff; border: 1px solid #e0e6f0;
+    border-radius: 6px; padding: 6px 10px;
+    color: #1a1a2e; word-break: break-all;
+}
+.badge-read  { display:inline-block; background:#e8f5e9; color:#2e7d32; padding:2px 9px; border-radius:99px; font-size:0.78rem; font-weight:700; }
+.badge-write { display:inline-block; background:#fff3e0; color:#e65100; padding:2px 9px; border-radius:99px; font-size:0.78rem; font-weight:700; }
+.sec-label {
+    font-size: 0.74rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.07em; color: #888; margin-bottom: 4px;
+}
+.quick-label { font-size: 0.78rem; color: #888; font-weight: 600; margin-bottom: 4px; }
+</style>
+""", unsafe_allow_html=True)
 
-def access_type(url: str) -> str:
-    u = normalize_text(url)
-    write_words = [
-        "create", "add", "edit", "update", "remove", "delete", "cancel",
-        "approve", "allocate", "discard", "assign", "close", "open",
-        "complete", "receive", "reject", "hold", "unhold", "upload",
-        "download", "save", "submit", "import", "export"
-    ]
-    return "WRITE" if any(w in u for w in write_words) else "READ"
+# ─────────────────────────────────────────────────────────────────────────────
+# CONSTANTS
+# ─────────────────────────────────────────────────────────────────────────────
+VERBS = {
+    'create','add','edit','update','remove','delete','cancel','approve',
+    'search','fetch','get','view','show','print','preview','export',
+    'import','assign','allocate','open','close','complete','receive',
+    'reject','hold','unhold','upload','download','discard','save',
+    'submit','split','amend','confirm','dispatch','mark','merge','reset',
+    'scan','lookup','find','list','generate','process',
+}
+SKIP_SEGS = {
+    'data','admin','oms','catalog','reports','procure','shipping','returns',
+    'tasks','putaway','inflow','material','system','layout','printing',
+    'picklogic','picker','packer','channel','orders','meta','lookup',
+    'configure','dashboard','staging','customers','grns','vendor',
+    'batching','bill','materials','services','wap','api','myaccount','po',
+}
+WRITE_WORDS = {
+    'create','add','edit','update','remove','delete','cancel','approve',
+    'allocate','discard','assign','close','open','complete','receive',
+    'reject','hold','unhold','upload','download','save','submit',
+    'import','export','amend','confirm','dispatch','mark','merge',
+    'reset','split','scan',
+}
+QUICK_TERMS = [
+    "gatepass","invoice","picklist","shipping","catalog","channel",
+    "returns","putaway","manifest","cyclecount","vendor","inflow",
+    "procurement","sale order","grn","dispatch",
+]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# HELPERS
+# ─────────────────────────────────────────────────────────────────────────────
+def split_camel(s: str) -> str:
+    s = re.sub(r'([a-z])([A-Z])', r'\1 \2', s)
+    return s.replace('-', ' ').replace('_', ' ').strip()
+
+def prettify(s: str) -> str:
+    return split_camel(s).title().strip()
 
 def extract_activity(url: str) -> str:
-    """
-    The last meaningful action being performed.
-    Examples:
-      /data/catalog/addTag -> Add Tag
-      /data/shipping/splitPackage -> Split Package
-      /channel/returnFacilityMapping -> Return Facility Mapping
-    """
-    url = str(url).strip()
-    parts = [p for p in url.strip("/").split("/") if p]
-    if not parts:
-        return "Root"
-
-    for idx in range(len(parts) - 1, -1, -1):
-        seg = split_camel(parts[idx])
-        low = seg.lower()
-
-        for verb in VERBS:
-            if low == verb:
-                if idx + 1 < len(parts):
-                    tail = titleize_segment(parts[idx + 1])
-                    if tail and tail.lower() not in SYSTEM_WORDS:
-                        return f"{verb.title()} {tail}"
-                return verb.title()
-
-            if low.startswith(verb):
-                tail = seg[len(verb):].strip()
-                tail = re.sub(r"^[-_/ ]+", "", tail)
-                tail = titleize_segment(tail)
+    segs = [s for s in url.strip('/').split('/') if s and s != '*']
+    if not segs:
+        return 'Root'
+    for i in range(len(segs) - 1, -1, -1):
+        sw = split_camel(segs[i]).lower()
+        if sw in VERBS:
+            verb = sw.title()
+            for j in range(i + 1, len(segs)):
+                obj = split_camel(segs[j]).lower()
+                if obj not in SKIP_SEGS and not obj.isdigit():
+                    return f"{verb} {prettify(segs[j])}"
+            for j in range(i - 1, -1, -1):
+                obj = split_camel(segs[j]).lower()
+                if obj not in SKIP_SEGS and not obj.isdigit():
+                    return f"{verb} {prettify(segs[j])}"
+            return verb
+        for verb in sorted(VERBS, key=len, reverse=True):
+            if sw.startswith(verb) and len(sw) > len(verb):
+                tail = split_camel(segs[i])[len(verb):].strip()
                 if tail:
-                    return f"{verb.title()} {tail}"
-                if idx + 1 < len(parts):
-                    tail2 = titleize_segment(parts[idx + 1])
-                    if tail2 and tail2.lower() not in SYSTEM_WORDS:
-                        return f"{verb.title()} {tail2}"
-                return verb.title()
+                    return f"{verb.title()} {tail.title()}"
+    for i in range(len(segs) - 1, -1, -1):
+        sw = split_camel(segs[i]).lower()
+        if sw not in SKIP_SEGS:
+            return prettify(segs[i])
+    return prettify(segs[-1])
 
-    return titleize_segment(parts[-1])
+def access_type_label(url: str) -> str:
+    u = url.lower()
+    return "WRITE" if any(w in u for w in WRITE_WORDS) else "READ"
 
-def infer_resource_name(url: str, resource_id=None) -> str:
-    """
-    Best-effort fallback when the sidebar doc doesn't give an exact resource name.
-    """
-    u = normalize_text(url)
-
-    if "/channel/returnfacilitymapping" in u:
-        return "CHANNELS_ADMIN"
-    if "channelpaymentreconciliation" in u or "/admin/system/paymentreconciliation" in u:
-        return "PAYMENT_RECONCILIATION"
-    if "/channel/productmapping" in u or "/channel/unmappedsku" in u or "/channel/pendency" in u:
-        return "CHANNEL_PRODUCTS"
-    if (
-        "/channel/addchannel" in u
-        or "/channel/sources" in u
-        or "/channel/view" in u
-        or "/data/meta/sources" in u
-        or "/data/channel/getchannels" in u
-        or "/data/channel/getchanneldetails" in u
-        or "/data/channel/getchannelordersummary" in u
-        or "/data/channel/getchannelproductsummary" in u
-        or "/channel/preconfigurechannel" in u
-        or "/channel/postconfigurechannel" in u
-        or "/channel/gotochannellandingpage" in u
-        or "/channel/redirect" in u
-        or "/data/channel/addchannelconnector" in u
-    ):
-        return "SOURCES_VIEW"
-
-    if "pricemaster" in u:
-        return "PRICE_MASTER"
-
-    if "/catalog" in u or "/products" in u:
-        if any(x in u for x in ["/products/inventory", "inventory/adjustmenthistory"]):
-            return "LOOKUP_INVENTORY"
-        if any(v in u for v in ["create", "add", "edit", "update", "remove", "delete", "category", "tag", "itemtype"]):
-            return "ADMIN_CATALOG"
-        if any(v in u for v in ["search", "get", "view", "show"]):
-            return "ADMIN_CATALOG_VIEW"
-        return "ADMIN_CATALOG"
-
-    if "/shipping" in u or "/shipment" in u or "/manifests" in u:
-        return "SHIPPING"
-
-    if "/returns" in u:
-        return "RETURNS"
-
-    if "/procure" in u or "/po/" in u:
-        return "PROCUREMENT"
-
-    if "/inflow" in u:
-        return "INFLOW"
-
-    if "/putaway" in u:
-        return "PUTAWAY"
-
-    if "/admin/" in u:
-        parts = [p for p in u.strip("/").split("/") if p]
-        if len(parts) >= 2:
-            return "ADMIN_" + parts[1].upper()
-        return "ADMIN"
-
-    if resource_id is not None:
-        return f"RESOURCE_{resource_id}"
-
-    return "UNMAPPED"
-
-def make_search_blob(df: pd.DataFrame) -> pd.Series:
-    cols = [
-        df["source"].fillna("").astype(str),
-        df["access_resource_name"].fillna("").astype(str),
-        df["access_resource_id"].fillna("").astype(str),
-        df["tab_name"].fillna("").astype(str),
-        df["side_tab_group"].fillna("").astype(str),
-        df["url_pattern"].fillna("").astype(str),
-        df["activity"].fillna("").astype(str),
-        df["access_type"].fillna("").astype(str),
-    ]
-    return (cols[0] + " " + cols[1] + " " + cols[2] + " " + cols[3] + " " + cols[4] + " " + cols[5] + " " + cols[6] + " " + cols[7]).str.lower()
-
-def score_query(query: str, row) -> float:
-    q = normalize_text(query)
+def score_row(query: str, activity: str, resource: str, url: str, tab: str = "", group: str = "") -> float:
+    q = query.strip().lower()
     if not q:
         return 0.0
-
-    values = {
-        "resource_name": normalize_text(row.access_resource_name),
-        "url": normalize_text(row.url_pattern),
-        "activity": normalize_text(row.activity),
-        "tab": normalize_text(row.tab_name or ""),
-        "group": normalize_text(row.side_tab_group or ""),
-        "rid": str("" if pd.isna(row.access_resource_id) else row.access_resource_id),
-    }
-
+    a, r, u, t, g = (x.lower() for x in (activity, resource, url, tab, group))
     score = 0.0
-    if q == values["rid"]:
-        score += 100
-    if q in values["resource_name"]:
-        score += 50
-    if q in values["url"]:
-        score += 55
-    if q in values["activity"]:
-        score += 45
-    if q in values["tab"]:
-        score += 35
-    if q in values["group"]:
-        score += 30
-
+    if q == r:           score += 100
+    if q in r:           score += 50
+    if q in u:           score += 55
+    if q in a:           score += 45
+    if q in t:           score += 35
+    if q in g:           score += 30
     for token in q.split():
-        if token in values["resource_name"]:
-            score += 8
-        if token in values["url"]:
-            score += 8
-        if token in values["activity"]:
-            score += 8
-        if token in values["tab"]:
-            score += 5
-        if token in values["group"]:
-            score += 5
-
-    score += SequenceMatcher(None, q, values["resource_name"]).ratio() * 10
-    score += SequenceMatcher(None, q, values["url"]).ratio() * 10
-    score += SequenceMatcher(None, q, values["activity"]).ratio() * 8
+        if token in r:   score += 8
+        if token in u:   score += 8
+        if token in a:   score += 8
+        if token in t:   score += 5
+        if token in g:   score += 5
+    score += SequenceMatcher(None, q, r).ratio() * 10
+    score += SequenceMatcher(None, q, u).ratio() * 10
+    score += SequenceMatcher(None, q, a).ratio() * 8
     return score
 
-# =====================================================
-# PARSERS
-# =====================================================
+def build_suggestions(df: pd.DataFrame, url_col: str, activity_col: str,
+                      extra_cols: list[str] | None = None) -> list[str]:
+    seen: set[str] = set()
+    IGNORE = {
+        'data','admin','get','oms','api','wap','the','and','for','not',
+        'all','its','are','was','but','can','had','her','him','his',
+        'how','our','out','who','did','let','put','say','she','too',
+        'use','way','you','com','www','null',
+    }
+    def add(w: str):
+        w = w.strip().lower()
+        if len(w) > 2 and w not in seen and w not in IGNORE:
+            seen.add(w)
 
-@st.cache_data
-def parse_txt_dump(file_path: str) -> pd.DataFrame:
-    path = Path(file_path)
+    for url in df[url_col].dropna():
+        for s in url.strip('/').split('/'):
+            if s and s != '*':
+                add(split_camel(s).lower())
+    for act in df[activity_col].dropna():
+        add(act.lower())
+    for col in (extra_cols or []):
+        if col in df.columns:
+            for v in df[col].dropna():
+                add(str(v).lower())
+    return sorted(seen)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PARSERS
+# ─────────────────────────────────────────────────────────────────────────────
+@st.cache_data(show_spinner=False)
+def load_pattern_data(filepath: str) -> pd.DataFrame:
+    path = Path(filepath)
     if not path.exists():
         return pd.DataFrame()
 
-    raw = path.read_text(encoding="utf-8", errors="ignore")
-    rows = []
+    raw   = path.read_text(encoding="utf-8", errors="ignore")
+    lines = raw.splitlines()
 
-    for line in raw.splitlines():
+    # Locate Table 2 header (resource definitions)
+    t2_start = None
+    for i, line in enumerate(lines):
+        if "name" in line and "access_resource_group_id" in line and "level" in line:
+            t2_start = i
+            break
+    if t2_start is None:
+        t2_start = len(lines)
+
+    # ── Parse Table 1 : URL patterns ─────────────────────────────────────
+    url_rows = []
+    for line in lines[:t2_start]:
         line = line.strip()
         if not line or line.startswith("+---") or "|" not in line:
             continue
-
         parts = [p.strip() for p in line.strip("|").split("|")]
-        if len(parts) < 5:
-            continue
-        if parts[0].lower() == "id":
+        if len(parts) < 5 or parts[0].lower() == "id":
             continue
         if not parts[0].isdigit() or not parts[1].isdigit():
             continue
-
         url = parts[2].strip()
         if not url.startswith("/"):
             continue
+        url_rows.append({
+            "pattern_id":        int(parts[0]),
+            "access_resource_id": int(parts[1]),
+            "url_pattern":        url,
+            "updated":            parts[4].strip() if len(parts) > 4 else "",
+        })
 
-        rows.append(
-            {
-                "id": int(parts[0]),
-                "access_resource_id": int(parts[1]),
-                "url_pattern": url,
-                "created": parts[3].strip() if len(parts) > 3 else "",
-                "updated": parts[4].strip() if len(parts) > 4 else "",
+    # ── Parse Table 2 : Resource definitions ─────────────────────────────
+    res_map: dict[int, dict] = {}
+    for line in lines[t2_start:]:
+        line = line.strip()
+        if not line or line.startswith("+---") or "|" not in line:
+            continue
+        parts = [p.strip() for p in line.strip("|").split("|")]
+        if len(parts) < 4 or parts[0].lower() == "id":
+            continue
+        if not parts[0].isdigit():
+            continue
+        name = parts[1].strip()
+        if not name or not re.match(r'^[A-Z][A-Z0-9_]+$', name):
+            continue
+        rid = int(parts[0])
+        if rid not in res_map:      # keep first occurrence per id
+            res_map[rid] = {
+                "name":  name,
+                "level": parts[3].strip() if len(parts) > 3 else "",
             }
-        )
 
-    df = pd.DataFrame(rows)
-    if df.empty:
-        return df
+    # ── Join & enrich ─────────────────────────────────────────────────────
+    rows = []
+    for row in url_rows:
+        rid = row["access_resource_id"]
+        res = res_map.get(rid, {})
+        url = row["url_pattern"]
+        rows.append({
+            "Resource ID":     rid,
+            "Access Resource": res.get("name", f"ID_{rid}"),
+            "Level":           res.get("level", ""),
+            "Activity":        extract_activity(url),
+            "Type":            access_type_label(url),
+            "URL Pattern":     url,
+            "Last Updated":    row["updated"],
+        })
 
-    df["source"] = "access pattern dump"
-    return df.drop_duplicates(subset=["access_resource_id", "url_pattern"]).reset_index(drop=True)
+    return pd.DataFrame(rows)
 
-@st.cache_data
-def parse_sidebar_doc(file_path: str) -> pd.DataFrame:
-    path = Path(file_path)
+
+@st.cache_data(show_spinner=False)
+def load_sidebar_data(filepath: str) -> pd.DataFrame:
+    path = Path(filepath)
     if not path.exists():
         return pd.DataFrame()
 
@@ -299,11 +337,10 @@ def parse_sidebar_doc(file_path: str) -> pd.DataFrame:
         if part.get_content_type() == "text/html":
             html_payload = part.get_payload(decode=True).decode("utf-8", errors="ignore")
             break
-
     if not html_payload:
         return pd.DataFrame()
 
-    soup = BeautifulSoup(html_payload, "html.parser")
+    soup  = BeautifulSoup(html_payload, "html.parser")
     table = soup.find("table")
     if table is None:
         return pd.DataFrame()
@@ -311,413 +348,365 @@ def parse_sidebar_doc(file_path: str) -> pd.DataFrame:
     rows = []
     for tr in table.find_all("tr")[1:]:
         cells = [c.get_text(" ", strip=True) for c in tr.find_all(["td", "th"])]
-        if len(cells) < 4:
+        if len(cells) < 4 or not cells[0] or not cells[2]:
             continue
-        rows.append(
-            {
-                "tab_name": cells[0],
-                "side_tab_group": cells[1],
-                "url_pattern": cells[2],
-                "access_resource_name": cells[3],
-            }
-        )
+        url = cells[2].strip()
+        rows.append({
+            "Tab Name":        cells[0].strip(),
+            "Side Tab Group":  cells[1].strip(),
+            "Access Resource": cells[3].strip(),
+            "Activity":        extract_activity(url),
+            "Type":            access_type_label(url),
+            "URL Pattern":     url,
+        })
 
     df = pd.DataFrame(rows)
-    if df.empty:
-        return df
+    return df.drop_duplicates(subset=["URL Pattern"]).reset_index(drop=True)
 
-    df["source"] = "sidebar mapping"
-    return df.drop_duplicates(subset=["url_pattern"]).reset_index(drop=True)
+# ─────────────────────────────────────────────────────────────────────────────
+# LOAD
+# ─────────────────────────────────────────────────────────────────────────────
+with st.spinner("Loading data…"):
+    pat_df  = load_pattern_data(TXT_FILE)
+    side_df = load_sidebar_data(DOC_FILE)
 
-def build_master_dataframe(txt_df: pd.DataFrame, doc_df: pd.DataFrame) -> pd.DataFrame:
-    if txt_df.empty and doc_df.empty:
-        return pd.DataFrame()
+errors = []
+if pat_df.empty:
+    errors.append(f"❌ `{TXT_FILE}` — not found or empty. Place it next to `app.py`.")
+if side_df.empty:
+    errors.append(f"❌ `{DOC_FILE}` — not found or empty. Place it next to `app.py`.")
+if errors:
+    for e in errors:
+        st.error(e)
+    st.stop()
 
-    exact_doc = doc_df.copy() if not doc_df.empty else pd.DataFrame(columns=["url_pattern", "tab_name", "side_tab_group", "access_resource_name", "source"])
-    exact_doc_map = exact_doc.set_index("url_pattern").to_dict("index") if not exact_doc.empty else {}
+@st.cache_data(show_spinner=False)
+def get_pat_suggestions(df: pd.DataFrame) -> list[str]:
+    return build_suggestions(df, "URL Pattern", "Activity",
+                             extra_cols=["Access Resource"])
 
-    merged_txt = txt_df.copy()
-    if not merged_txt.empty:
-        merged_txt["tab_name"] = merged_txt["url_pattern"].map(lambda u: exact_doc_map.get(u, {}).get("tab_name"))
-        merged_txt["side_tab_group"] = merged_txt["url_pattern"].map(lambda u: exact_doc_map.get(u, {}).get("side_tab_group"))
-        merged_txt["exact_access_resource_name"] = merged_txt["url_pattern"].map(lambda u: exact_doc_map.get(u, {}).get("access_resource_name"))
+@st.cache_data(show_spinner=False)
+def get_side_suggestions(df: pd.DataFrame) -> list[str]:
+    return build_suggestions(df, "URL Pattern", "Activity",
+                             extra_cols=["Access Resource", "Tab Name", "Side Tab Group"])
 
-        dominant_by_id = {}
-        exact_subset = merged_txt.dropna(subset=["exact_access_resource_name"])
-        for rid, g in exact_subset.groupby("access_resource_id"):
-            counts = g["exact_access_resource_name"].value_counts()
-            if len(counts) == 1 or counts.iloc[0] > counts.iloc[1]:
-                dominant_by_id[rid] = counts.index[0]
+pat_suggestions  = get_pat_suggestions(pat_df)
+side_suggestions = get_side_suggestions(side_df)
 
-        def finalize_name(row):
-            exact_name = row["exact_access_resource_name"]
-            if pd.notna(exact_name) and str(exact_name).strip():
-                return str(exact_name).strip(), "exact"
-            if row["access_resource_id"] in dominant_by_id:
-                return dominant_by_id[row["access_resource_id"]], "dominant-id"
-            return infer_resource_name(row["url_pattern"], row["access_resource_id"]), "inferred"
+# ─────────────────────────────────────────────────────────────────────────────
+# HEADER
+# ─────────────────────────────────────────────────────────────────────────────
+st.markdown("# 🛡️ Uniware Access Resource Auditor")
+st.markdown(
+    f'<p style="color:#666;font-size:0.85rem;margin-top:2px;margin-bottom:1rem;">'
+    f'Pattern Dump: <b>{len(pat_df):,} URLs</b> · <b>{pat_df["Access Resource"].nunique()} resources</b>'
+    f'&ensp;|&ensp;'
+    f'Left Sidebar: <b>{len(side_df)} items</b> · <b>{side_df["Access Resource"].nunique()} resources</b>'
+    f'</p>',
+    unsafe_allow_html=True,
+)
 
-        values = merged_txt.apply(finalize_name, axis=1, result_type="expand")
-        merged_txt["access_resource_name"] = values[0]
-        merged_txt["resource_name_source"] = values[1]
-
-        merged_txt["tab_name"] = merged_txt["tab_name"].fillna("")
-        merged_txt["side_tab_group"] = merged_txt["side_tab_group"].fillna("")
-        merged_txt["access_type"] = merged_txt["url_pattern"].apply(access_type)
-        merged_txt["activity"] = merged_txt["url_pattern"].apply(extract_activity)
-        merged_txt["row_label"] = merged_txt.apply(
-            lambda r: f"{r['activity']} | {r['access_resource_name']} | {r['access_resource_id']} | {r['url_pattern']}",
-            axis=1,
-        )
-    else:
-        merged_txt = pd.DataFrame(columns=[
-            "id", "access_resource_id", "url_pattern", "created", "updated",
-            "tab_name", "side_tab_group", "exact_access_resource_name",
-            "access_resource_name", "resource_name_source", "access_type", "activity", "row_label", "source"
-        ])
-
-    txt_urls = set(txt_df["url_pattern"].tolist()) if not txt_df.empty else set()
-    doc_only_rows = []
-    for r in doc_df.itertuples(index=False):
-        if r.url_pattern in txt_urls:
-            continue
-        doc_only_rows.append(
-            {
-                "id": None,
-                "access_resource_id": None,
-                "url_pattern": r.url_pattern,
-                "created": "",
-                "updated": "",
-                "tab_name": r.tab_name,
-                "side_tab_group": r.side_tab_group,
-                "exact_access_resource_name": r.access_resource_name,
-                "access_resource_name": r.access_resource_name,
-                "resource_name_source": "exact-doc",
-                "access_type": access_type(r.url_pattern),
-                "activity": extract_activity(r.url_pattern),
-                "row_label": f"{extract_activity(r.url_pattern)} | {r.access_resource_name} | {r.url_pattern}",
-                "source": "sidebar mapping",
-            }
-        )
-
-    doc_only_df = pd.DataFrame(doc_only_rows)
-    master = pd.concat([merged_txt, doc_only_df], ignore_index=True, sort=False)
-    master["search_blob"] = make_search_blob(master)
-    master = master.drop_duplicates(subset=["source", "access_resource_name", "access_resource_id", "url_pattern"]).reset_index(drop=True)
-    return master
-
-def search_master(df: pd.DataFrame, query: str, source_filter: str | None = None, access_type_filter: list[str] | None = None) -> pd.DataFrame:
-    q = normalize_text(query)
+# ─────────────────────────────────────────────────────────────────────────────
+# SEARCH  +  FILTER  +  RESULTS  (shared logic for both tabs)
+# ─────────────────────────────────────────────────────────────────────────────
+def apply_filters(df: pd.DataFrame, query: str,
+                  type_filter: list[str],
+                  extra_col: str | None, extra_vals: list[str]) -> pd.DataFrame:
     out = df.copy()
 
-    if source_filter and source_filter != "all":
-        out = out[out["source"] == source_filter]
-
-    if access_type_filter:
-        out = out[out["access_type"].isin(access_type_filter)]
-
-    if q:
-        mask = (
-            out["search_blob"].str.contains(re.escape(q), na=False)
-            | out["row_label"].str.lower().str.contains(re.escape(q), na=False)
-            | out["url_pattern"].str.lower().str.contains(re.escape(q), na=False)
-            | out["access_resource_name"].str.lower().str.contains(re.escape(q), na=False)
-            | out["tab_name"].fillna("").str.lower().str.contains(re.escape(q), na=False)
-            | out["side_tab_group"].fillna("").str.lower().str.contains(re.escape(q), na=False)
-            | out["access_resource_id"].astype(str).eq(q)
-        )
+    if query:
+        q = query.strip().lower()
+        mask = pd.Series(False, index=out.index)
+        for col in ["Activity", "Access Resource", "URL Pattern",
+                    "Tab Name", "Side Tab Group", "Level"]:
+            if col in out.columns:
+                mask |= out[col].fillna("").str.lower().str.contains(re.escape(q), na=False)
         out = out[mask].copy()
 
-        if out.empty:
-            return out
-
+        # Score and sort
         scores = []
-        for r in out.itertuples(index=False):
-            scores.append(score_query(q, r))
-        out["score"] = scores
-        out = out.sort_values(["score", "source", "access_resource_name", "url_pattern"], ascending=[False, True, True, True])
+        for row in out.itertuples(index=False):
+            scores.append(score_row(
+                query,
+                getattr(row, "Activity", ""),
+                getattr(row, "Access Resource", ""),
+                getattr(row, "URL Pattern", ""),
+                getattr(row, "Tab Name", ""),
+                getattr(row, "Side Tab Group", ""),
+            ))
+        out["_score"] = scores
+        out = out.sort_values("_score", ascending=False).drop(columns=["_score"])
+
+    if type_filter:
+        out = out[out["Type"].isin(type_filter)]
+
+    if extra_col and extra_vals:
+        out = out[out[extra_col].isin(extra_vals)]
 
     return out.reset_index(drop=True)
 
-def grouped_summary(df: pd.DataFrame) -> pd.DataFrame:
+
+def grouped_summary(df: pd.DataFrame, res_col: str = "Access Resource") -> pd.DataFrame:
     if df.empty:
         return pd.DataFrame()
-
-    return (
-        df.groupby(["access_resource_name", "access_type", "source"], as_index=False)
+    agg = (
+        df.groupby([res_col, "Type"], as_index=False)
         .agg(
-            urls=("url_pattern", lambda s: " • ".join(sorted(set(map(str, s))))),
-            tab_names=("tab_name", lambda s: " • ".join(sorted(set([x for x in map(str, s) if x and x != 'nan'])))),
-            count=("url_pattern", "nunique"),
+            URLs       = ("URL Pattern", "nunique"),
+            Activities = ("Activity",    lambda s: " · ".join(sorted(set(s))[:8])),
         )
-        .sort_values(["count", "access_resource_name"], ascending=[False, True])
+        .sort_values("URLs", ascending=False)
         .reset_index(drop=True)
     )
+    return agg
 
-# =====================================================
-# LOAD DATA
-# =====================================================
 
-txt_df = parse_txt_dump(TXT_FILE)
-doc_df = parse_sidebar_doc(DOC_FILE)
-master_df = build_master_dataframe(txt_df, doc_df)
+def render_tab(
+    df:              pd.DataFrame,
+    suggestions:     list[str],
+    sk:              str,               # session-state key prefix
+    result_cols:     list[str],
+    extra_col:       str | None = None,
+    extra_label:     str        = "",
+    extra_options:   list[str]  | None = None,
+    source_label:    str        = "",
+):
+    # ── Quick search chips ────────────────────────────────────────────────
+    st.markdown('<p class="quick-label">Quick search</p>', unsafe_allow_html=True)
+    qcols = st.columns(8)
+    for i, term in enumerate(QUICK_TERMS):
+        if qcols[i % 8].button(term, key=f"quick_{sk}_{term}", use_container_width=True):
+            st.session_state[f"{sk}_typed"] = term
 
-if master_df.empty:
-    st.error("No data could be loaded from the files.")
-    st.stop()
+    st.markdown("<br>", unsafe_allow_html=True)
 
-# =====================================================
-# SIDEBAR
-# =====================================================
-
-st.sidebar.header("Search")
-
-query = st.sidebar.text_input(
-    "Search",
-    placeholder="Try: create catalog, split package, /channel/returnFacilityMapping, ADMIN_CATALOG",
-    help="Search works across activity, access resource name, URL pattern, tab name, side tab group, and resource id."
-)
-
-access_type_choices = sorted(master_df["access_type"].dropna().unique().tolist())
-selected_access_types = st.sidebar.multiselect(
-    "Access type",
-    access_type_choices,
-    default=access_type_choices,
-    help="READ = mostly view/search/get. WRITE = create/update/cancel/approve/allocate and other change actions."
-)
-
-source_choice = st.sidebar.selectbox(
-    "Source",
-    options=["all", "access pattern dump", "sidebar mapping"],
-    index=0,
-    help="Choose the raw pattern dump, the sidebar mapping doc, or both."
-)
-
-show_resource_filter = st.sidebar.checkbox(
-    "Show access resource filter",
-    value=False,
-    help="Use this only when you want to narrow the result set by a specific access resource name."
-)
-
-selected_resource_names = None
-if show_resource_filter:
-    resource_search = st.sidebar.text_input(
-        "Filter resource names",
-        placeholder="Type part of a resource name, e.g. catalog, shipping, channels",
-        help="This narrows the dropdown to matching resource names."
-    )
-    resource_options = sorted(master_df["access_resource_name"].dropna().unique().tolist())
-    if resource_search.strip():
-        rs = normalize_text(resource_search)
-        resource_options = [r for r in resource_options if rs in normalize_text(r)]
-    resource_options = ["All access resources"] + resource_options
-    chosen_resource = st.sidebar.selectbox(
-        "Access resource name",
-        resource_options,
-        help="Exact resource name from the file or a best-fit inferred resource name."
-    )
-    if chosen_resource != "All access resources":
-        selected_resource_names = [chosen_resource]
-
-show_grouped = st.sidebar.checkbox(
-    "Show grouped summary",
-    value=True,
-    help="Shows a compact one-row-per-resource summary."
-)
-
-show_raw = st.sidebar.checkbox(
-    "Show raw rows",
-    value=False,
-    help="Shows the underlying merged rows from both files."
-)
-
-only_unique_resources = st.sidebar.checkbox(
-    "Show unique resources only",
-    value=False,
-    help="Keeps one row per resource in the main results table."
-)
-
-quick_terms = [
-    "create", "add", "edit", "update", "search", "get",
-    "view", "cancel", "approve", "allocate", "print",
-    "export", "import", "manifest", "picklist", "channel",
-    "catalog", "shipping", "returns"
-]
-
-st.sidebar.markdown("Quick search")
-qcols = st.sidebar.columns(2)
-for i, term in enumerate(quick_terms):
-    if qcols[i % 2].button(term.title(), key=f"quick_{term}"):
-        st.session_state["q"] = term
-        st.rerun()
-
-query = st.session_state.get("q", query)
-
-# =====================================================
-# SEARCH + FILTER
-# =====================================================
-
-filtered = search_master(
-    master_df,
-    query=query,
-    source_filter=source_choice,
-    access_type_filter=selected_access_types,
-)
-
-if selected_resource_names:
-    filtered = filtered[filtered["access_resource_name"].isin(selected_resource_names)].reset_index(drop=True)
-
-if only_unique_resources and not filtered.empty:
-    filtered = filtered.sort_values(["score", "access_resource_name"], ascending=[False, True]) if "score" in filtered.columns else filtered
-    filtered = filtered.drop_duplicates(subset=["access_resource_name", "access_resource_id"], keep="first").reset_index(drop=True)
-
-# =====================================================
-# SUMMARY
-# =====================================================
-
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("Rows", len(filtered))
-c2.metric("Unique resources", filtered["access_resource_name"].nunique() if not filtered.empty else 0)
-c3.metric("Unique activities", filtered["activity"].nunique() if not filtered.empty else 0)
-c4.metric("Unique URLs", filtered["url_pattern"].nunique() if not filtered.empty else 0)
-
-st.divider()
-
-# =====================================================
-# RESULTS
-# =====================================================
-
-st.subheader("Results")
-
-if filtered.empty:
-    st.warning("No matching access resources found. Try another search term or clear some filters.")
-else:
-    display_cols = [
-        "source",
-        "access_resource_name",
-        "access_resource_id",
-        "access_type",
-        "activity",
-        "url_pattern",
-        "tab_name",
-        "side_tab_group",
-        "resource_name_source",
-    ]
-    if "score" in filtered.columns:
-        display_cols = ["score"] + display_cols
-
-    st.dataframe(
-        filtered[display_cols],
-        use_container_width=True,
-        hide_index=True
-    )
-
-    st.markdown("### Focus on one result")
-
-    dropdown_df = filtered.copy()
-    dropdown_df["dropdown_label"] = dropdown_df.apply(
-        lambda r: f"{r['activity']}  |  {r['access_resource_name']}  |  {r['access_resource_id'] if pd.notna(r['access_resource_id']) else '—'}  |  {r['url_pattern']}",
-        axis=1
-    )
-    dropdown_options = ["All results"] + dropdown_df["dropdown_label"].dropna().tolist()
-    chosen = st.selectbox(
-        "Choose a result",
-        dropdown_options,
-        help="Use this to focus on one activity/resource combination without losing the distinction between them."
-    )
-
-    focus_df = filtered.copy()
-    if chosen != "All results":
-        focus_df = focus_df[dropdown_df["dropdown_label"] == chosen].copy()
-
-    if not focus_df.empty:
-        row = focus_df.iloc[0]
-        col1, col2 = st.columns(2)
-
-        with col1:
-            st.write("Access resource name")
-            st.code(str(row["access_resource_name"]), language="text")
-
-            st.write("Access resource id")
-            st.code("" if pd.isna(row["access_resource_id"]) else str(int(row["access_resource_id"])), language="text")
-
-            st.write("Access type")
-            st.code(str(row["access_type"]), language="text")
-            st.caption("READ = view/search/get. WRITE = create/update/cancel/approve/allocate and similar actions.")
-
-        with col2:
-            st.write("Activity")
-            st.code(str(row["activity"]), language="text")
-
-            st.write("URL pattern")
-            st.code(str(row["url_pattern"]), language="text")
-
-            if str(row.get("tab_name", "")).strip():
-                st.write("Tab name")
-                st.code(str(row["tab_name"]), language="text")
-
-            if str(row.get("side_tab_group", "")).strip():
-                st.write("Side tab group")
-                st.code(str(row["side_tab_group"]), language="text")
-
-        st.info(
-            f"Mapping source: {row['resource_name_source']} • "
-            f"Source file: {row['source']}"
+    # ── Search + type filter row ──────────────────────────────────────────
+    c_search, c_type = st.columns([4, 1], gap="medium")
+    with c_search:
+        st.markdown('<p class="sec-label">Search</p>', unsafe_allow_html=True)
+        typed = st.text_input(
+            "s", label_visibility="collapsed",
+            placeholder="Type anything — gatepass, invoice, /data/oms/…, MATERIAL_MANAGEMENT",
+            key=f"{sk}_typed",
+        )
+    with c_type:
+        st.markdown('<p class="sec-label">Access type</p>', unsafe_allow_html=True)
+        type_filter = st.multiselect(
+            "t", label_visibility="collapsed",
+            options=["READ", "WRITE"], default=["READ", "WRITE"],
+            key=f"{sk}_type",
         )
 
-        if row["source"] == "sidebar mapping":
-            st.success("This row comes from the sidebar mapping document and is an exact UI mapping.")
-        elif row["resource_name_source"] == "exact":
-            st.success("This row has an exact access resource name from the sidebar mapping document.")
+    # ── Optional extra filter (Side Tab Group for sidebar tab) ───────────
+    chosen_extra: list[str] = []
+    if extra_col:
+        st.markdown(f'<p class="sec-label">{extra_label}</p>', unsafe_allow_html=True)
+        chosen_extra = st.multiselect(
+            extra_label, label_visibility="collapsed",
+            options=extra_options or [], default=[],
+            placeholder=f"All {extra_label}s",
+            key=f"{sk}_extra",
+        )
+
+    # ── Suggestion dropdown ───────────────────────────────────────────────
+    chosen_suggestion = None
+    if typed.strip():
+        q_low   = typed.strip().lower()
+        matched = [s for s in suggestions if q_low in s][:80]
+        if matched:
+            st.markdown('<p class="sec-label">Suggestions — pick one to narrow results</p>',
+                        unsafe_allow_html=True)
+            chosen_suggestion = st.selectbox(
+                "sg", label_visibility="collapsed",
+                options=["— show all matches —"] + matched,
+                key=f"{sk}_suggest",
+            )
+            if chosen_suggestion == "— show all matches —":
+                chosen_suggestion = None
         else:
-            st.warning("This row uses a best-fit resource name because the sidebar doc did not contain an exact URL match.")
+            st.caption("No keyword suggestions matched — showing all results for your text.")
 
-# =====================================================
-# GROUPED VIEW
-# =====================================================
+    st.divider()
 
-if show_grouped and not filtered.empty:
-    st.subheader("Grouped summary")
-    gdf = grouped_summary(filtered)
+    effective_query = chosen_suggestion if chosen_suggestion else typed.strip()
+    result = apply_filters(df, effective_query, type_filter, extra_col, chosen_extra)
+
+    # ── Metrics ───────────────────────────────────────────────────────────
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Results",          f"{len(result):,}")
+    m2.metric("Unique Resources", result["Access Resource"].nunique())
+    m3.metric("READ",             int((result["Type"] == "READ").sum()))
+    m4.metric("WRITE",            int((result["Type"] == "WRITE").sum()))
+
+    if result.empty:
+        st.warning("No results. Try a different keyword or clear the filters.")
+        return
+
+    # ── Resource pills ────────────────────────────────────────────────────
+    if effective_query:
+        unique_res  = sorted(result["Access Resource"].unique())
+        pills_html  = "".join(f'<span class="res-pill">{r}</span>' for r in unique_res)
+        st.markdown(
+            f'<div class="info-box"><b>Access resources required:</b><br>{pills_html}</div>',
+            unsafe_allow_html=True,
+        )
+
+    # ── Results table ─────────────────────────────────────────────────────
+    display_df = result[[c for c in result_cols if c in result.columns]].copy()
     st.dataframe(
-        gdf,
+        display_df,
         use_container_width=True,
-        hide_index=True
+        hide_index=True,
+        height=min(80 + len(display_df) * 35, 560),
+        column_config={
+            "Activity":        st.column_config.TextColumn("Activity",        width=200),
+            "Access Resource": st.column_config.TextColumn("Access Resource", width=220),
+            "Resource ID":     st.column_config.NumberColumn("Res. ID",       width=80),
+            "Type":            st.column_config.TextColumn("Type",            width=85),
+            "URL Pattern":     st.column_config.TextColumn("URL Pattern",     width=360),
+            "Level":           st.column_config.TextColumn("Level",           width=80),
+            "Last Updated":    st.column_config.TextColumn("Last Updated",    width=160),
+            "Tab Name":        st.column_config.TextColumn("Tab Name",        width=180),
+            "Side Tab Group":  st.column_config.TextColumn("Group",           width=160),
+        },
     )
 
-# =====================================================
-# RAW VIEW
-# =====================================================
+    # ── Focus on one result ───────────────────────────────────────────────
+    with st.expander("🔍 Focus on one result — full detail", expanded=False):
+        labels = result.apply(
+            lambda r: (
+                f"{r['Activity']}  ·  {r['Access Resource']}"
+                + (f"  ·  {int(r['Resource ID'])}" if "Resource ID" in r and pd.notna(r.get("Resource ID")) else "")
+                + f"  ·  {r['URL Pattern']}"
+            ),
+            axis=1,
+        ).tolist()
+        chosen_row = st.selectbox(
+            "Select a row to inspect",
+            options=["— pick a result —"] + labels,
+            key=f"{sk}_focus",
+        )
+        if chosen_row != "— pick a result —":
+            idx = labels.index(chosen_row)
+            row = result.iloc[idx]
 
-if show_raw:
-    with st.expander("Raw merged rows"):
-        st.dataframe(master_df, use_container_width=True, hide_index=True)
+            left, right = st.columns(2)
+            def field(col, label, val):
+                col.markdown(f'<p class="detail-label">{label}</p>', unsafe_allow_html=True)
+                col.markdown(f'<div class="detail-value">{val}</div>', unsafe_allow_html=True)
+                col.markdown("<br>", unsafe_allow_html=True)
 
-# =====================================================
-# DOWNLOADS
-# =====================================================
+            with left:
+                field(left, "Access Resource", row.get("Access Resource", "—"))
+                if "Resource ID" in row and pd.notna(row.get("Resource ID")):
+                    field(left, "Resource ID", int(row["Resource ID"]))
+                if "Level" in row and str(row.get("Level","")).strip():
+                    field(left, "Level", row["Level"])
+                atype = row.get("Type","")
+                badge_html = (
+                    '<span class="badge-write">✏️ WRITE</span>'
+                    if atype == "WRITE"
+                    else '<span class="badge-read">👁️ READ</span>'
+                )
+                left.markdown(f'<p class="detail-label">Access Type</p>{badge_html}',
+                              unsafe_allow_html=True)
 
-st.subheader("Downloads")
-d1, d2 = st.columns(2)
+            with right:
+                field(right, "Activity",    row.get("Activity",    "—"))
+                field(right, "URL Pattern", row.get("URL Pattern", "—"))
+                if "Tab Name" in row and str(row.get("Tab Name","")).strip():
+                    field(right, "Tab Name", row["Tab Name"])
+                if "Side Tab Group" in row and str(row.get("Side Tab Group","")).strip():
+                    field(right, "Side Tab Group", row["Side Tab Group"])
+                if "Last Updated" in row and str(row.get("Last Updated","")).strip():
+                    field(right, "Last Updated", row["Last Updated"])
 
-with d1:
-    export_main = filtered.drop(columns=["search_blob"], errors="ignore").to_csv(index=False).encode("utf-8")
+    # ── Grouped summary ───────────────────────────────────────────────────
+    with st.expander("📊 Grouped summary — one row per resource", expanded=False):
+        gdf = grouped_summary(result)
+        if not gdf.empty:
+            st.dataframe(
+                gdf,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "Access Resource": st.column_config.TextColumn("Access Resource", width=240),
+                    "Type":            st.column_config.TextColumn("Type",            width=80),
+                    "URLs":            st.column_config.NumberColumn("URL Count",     width=90),
+                    "Activities":      st.column_config.TextColumn("Activities (sample)", width=400),
+                },
+            )
+            csv_g = gdf.to_csv(index=False).encode("utf-8")
+            st.download_button(
+                "⬇️ Download grouped summary (CSV)",
+                data=csv_g,
+                file_name=f"grouped_{source_label}.csv",
+                mime="text/csv",
+            )
+
+    # ── Download full results ─────────────────────────────────────────────
+    csv_full = result.to_csv(index=False).encode("utf-8")
+    q_slug   = "_".join(effective_query.split()[:3]) if effective_query else "all"
     st.download_button(
-        "Download filtered results",
-        data=export_main,
-        file_name="filtered_access_resources.csv",
+        f"⬇️ Download all {len(result):,} results (CSV)",
+        data=csv_full,
+        file_name=f"{q_slug}_{source_label}.csv",
         mime="text/csv",
-        help="Downloads the rows you are currently seeing in the results table."
     )
 
-with d2:
-    export_grouped = grouped_summary(filtered).to_csv(index=False).encode("utf-8")
-    st.download_button(
-        "Download grouped summary",
-        data=export_grouped,
-        file_name="grouped_access_summary.csv",
-        mime="text/csv",
-        help="Downloads one line per access resource with URLs grouped together."
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TABS
+# ─────────────────────────────────────────────────────────────────────────────
+tab_pat, tab_side = st.tabs([
+    "📋  Access Pattern Dump",
+    "🗂️  Left Sidebar Mapping",
+])
+
+with tab_pat:
+    st.markdown(
+        '<div class="info-box">'
+        '<b>Source A — Access Pattern Dump.</b>  '
+        '1,180 backend URL patterns joined to their exact resource names from the database. '
+        'Type any keyword (module, action, URL segment, resource name) and pick a suggestion '
+        'to see every matching URL and the access resource it requires.'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+    render_tab(
+        df           = pat_df,
+        suggestions  = pat_suggestions,
+        sk           = "pat",
+        result_cols  = ["Activity", "Access Resource", "Resource ID", "Level",
+                        "Type", "URL Pattern", "Last Updated"],
+        source_label = "access_patterns",
     )
 
-st.caption("Built from both the pattern dump and the sidebar mapping document.")
+with tab_side:
+    st.markdown(
+        '<div class="info-box">'
+        '<b>Source B — Left Sidebar Mapping.</b>  '
+        '132 sidebar navigation items from the Confluence UI doc. '
+        'Each row maps a sidebar tab to its access resource. '
+        'Filter by Side Tab Group to see all items under a menu section.'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+    render_tab(
+        df             = side_df,
+        suggestions    = side_suggestions,
+        sk             = "side",
+        result_cols    = ["Tab Name", "Side Tab Group", "Activity",
+                          "Access Resource", "Type", "URL Pattern"],
+        extra_col      = "Side Tab Group",
+        extra_label    = "Side Tab Group",
+        extra_options  = sorted(g for g in side_df["Side Tab Group"].dropna().unique() if g),
+        source_label   = "sidebar_mapping",
+    )
+
+# ─────────────────────────────────────────────────────────────────────────────
+st.divider()
+st.caption(
+    "🛡️ Uniware Access Resource Auditor  ·  "
+    f"Source A: {TXT_FILE}  ·  Source B: {Path(DOC_FILE).name}"
+)
