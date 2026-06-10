@@ -382,41 +382,44 @@ def apply_filters(df, query, type_filter, extra_col=None, extra_vals=None):
 
 
 def render_grouped(result: pd.DataFrame, res_col_extra: list[str]):
-    """Grouped-by-resource accordion — the default results view."""
-    groups = result.groupby("Access Resource")
-    for res_name, gdf in sorted(groups, key=lambda x: -len(x[1])):
-        rc = int((gdf["Type"]=="READ").sum())
-        wc = int((gdf["Type"]=="WRITE").sum())
+    """
+    Grouped-by-resource sections — NO expanders, everything visible immediately.
+    Each resource is a labelled section with its table shown directly below it.
+    """
+    col_cfg = {
+        "Activity":       st.column_config.TextColumn("Activity",       width=200),
+        "Type":           st.column_config.TextColumn("Type",           width=80),
+        "URL Pattern":    st.column_config.TextColumn("URL Pattern",    width=360),
+        "Level":          st.column_config.TextColumn("Level",          width=80),
+        "Last Updated":   st.column_config.TextColumn("Last Updated",   width=150),
+        "Tab Name":       st.column_config.TextColumn("Tab Name",       width=180),
+        "Side Tab Group": st.column_config.TextColumn("Group",          width=160),
+    }
+    groups = sorted(result.groupby("Access Resource"), key=lambda x: -len(x[1]))
+    for res_name, gdf in groups:
+        rc = int((gdf["Type"] == "READ").sum())
+        wc = int((gdf["Type"] == "WRITE").sum())
         badge_r = f'<span class="badge-r">👁 {rc} READ</span>'
         badge_w = f'<span class="badge-w">✏️ {wc} WRITE</span>' if wc else ""
-        label   = f"**{res_name}** — {len(gdf)} URL{'s' if len(gdf)>1 else ''}  ·  {rc} READ  ·  {wc} WRITE"
-        with st.expander(label, expanded=(len(groups) == 1)):
-            st.markdown(
-                f'<div style="margin-bottom:6px">'
-                f'<span class="res-pill">{res_name}</span> '
-                f'{badge_r} {badge_w}'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
-            show_cols = [c for c in res_col_extra if c in gdf.columns]
-            st.dataframe(
-                gdf[show_cols].reset_index(drop=True),
-                use_container_width=True,
-                hide_index=True,
-                height=min(55 + len(gdf)*35, 400),
-                column_config={
-                    "Activity":       st.column_config.TextColumn("Activity",       width=200),
-                    "Type":           st.column_config.TextColumn("Type",           width=80),
-                    "URL Pattern":    st.column_config.TextColumn("URL Pattern",    width=360),
-                    "Level":          st.column_config.TextColumn("Level",          width=80),
-                    "Last Updated":   st.column_config.TextColumn("Last Updated",   width=150),
-                    "Tab Name":       st.column_config.TextColumn("Tab Name",       width=180),
-                    "Side Tab Group": st.column_config.TextColumn("Group",          width=160),
-                },
-            )
-            # Copy-friendly resource name
-            st.caption("Copy resource name 👇")
-            st.code(res_name, language="text")
+        st.markdown(
+            f'<div style="display:flex;align-items:center;gap:8px;margin-top:18px;margin-bottom:4px">'
+            f'<span class="res-pill" style="font-size:.85rem;padding:3px 12px">{res_name}</span>'
+            f'<span style="font-size:.8rem;color:#555">{len(gdf)} URL{"s" if len(gdf)>1 else ""}</span>'
+            f'{badge_r}&nbsp;{badge_w}'
+            f'<span style="margin-left:auto;font-size:.75rem;color:#999">copy ↓</span>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+        st.code(res_name, language="text")
+        show_cols = [c for c in res_col_extra if c in gdf.columns]
+        st.dataframe(
+            gdf[show_cols].reset_index(drop=True),
+            use_container_width=True,
+            hide_index=True,
+            height=min(55 + len(gdf) * 35, 380),
+            column_config=col_cfg,
+        )
+        st.divider()
 
 
 def render_detail_panel(result: pd.DataFrame, sk: str):
@@ -570,13 +573,31 @@ def render_tab(
             unsafe_allow_html=True,
         )
 
-    # ── View mode toggle ──────────────────────────────────────────────────
+    # ── Smart view: auto-pick flat vs grouped ────────────────────────────
+    # Flat is better when: query is a resource name, or only 1 resource, or few results.
+    # Grouped is better when: query is a module/activity spanning multiple resources.
+    n_resources     = result["Access Resource"].nunique()
+    query_is_res    = bool(effective_query) and (
+        effective_query.upper() in [r.upper() for r in result["Access Resource"].unique()]
+    )
+    auto_flat       = (n_resources <= 1) or query_is_res or (len(result) <= 8)
+    auto_msg        = (
+        "Flat table auto-selected — your search matched a single resource."
+        if auto_flat else
+        f"Grouped view auto-selected — results span {n_resources} resources."
+    )
+    st.caption(f"ℹ️ {auto_msg}  Change below if needed.")
+
     view = st.radio(
         "View",
-        options=["Grouped by resource (recommended)", "Flat table"],
+        options=["Flat table", "Grouped by resource"],
+        index=0 if auto_flat else 1,
         horizontal=True,
         key=f"{sk}_view",
-        help="Grouped view: results organised under each access resource — much easier to read when you have many results.  Flat table: every row individually."
+        help=(
+            "Flat table: all rows in one sortable table — best when you searched by resource name.  "
+            "Grouped: rows under each resource header with copy buttons — best when searching by module or activity."
+        ),
     )
 
     if "Grouped" in view:
