@@ -648,25 +648,32 @@ def render_tab(df, pool, quick_terms, sk, flat_cols, group_cols,
         st.markdown(f'<div class="info-strip"><b>Access resources matched:</b><br><br>{pills}</div>',
                     unsafe_allow_html=True)
 
-    # ── View selector ─────────────────────────────────────────────────────
-    n_res = result["Access Resource"].nunique()
-    is_res_q = bool(effective_query) and effective_query.upper() in \
-               [r.upper() for r in result["Access Resource"].unique()]
-    auto_flat = n_res <= 1 or is_res_q or len(result) <= 8
-
-    view = st.radio("View as", ["Flat table","Grouped by resource"],
-                    index=0 if auto_flat else 1, horizontal=True, key=f"{sk}_view",
-                    help="Flat table: all rows together, sortable by any column.  "
-                         "Grouped: rows under each resource — best when results span many resources.")
+    # ── View selector — flat is always default ────────────────────────────
+    view = st.radio(
+        "View as",
+        ["Flat table", "Grouped by resource"],
+        index=0,                        # ALWAYS default to flat
+        horizontal=True,
+        key=f"{sk}_view",
+        help="Flat table: all rows together, sortable by clicking any column header.  "
+             "Grouped: rows grouped under each resource header with copy buttons.",
+    )
 
     if "Grouped" in view:
         render_grouped(result, group_cols, sk,
                        pat_df_ref if pat_df_ref is not None else pat_df,
                        side_df_ref if side_df_ref is not None else side_df)
     else:
-        st.dataframe(result[[c for c in flat_cols if c in result.columns]],
-                     use_container_width=True, hide_index=True,
-                     height=min(80+len(result)*35,580), column_config=COL_CFG)
+        st.dataframe(
+            result[[c for c in flat_cols if c in result.columns]],
+            use_container_width=True, hide_index=True,
+            height=min(80 + len(result) * 35, 580),
+            column_config=COL_CFG,
+        )
+        # Copy block — always visible in flat view
+        unique_res = sorted(result["Access Resource"].unique())
+        st.caption(f"Copy {len(unique_res)} resource name(s) ↓")
+        st.code("  |  ".join(unique_res), language="text")
 
     # ── Detail + Summary + Download ───────────────────────────────────────
     render_detail(result, sk)
@@ -999,60 +1006,94 @@ def render_compare(pat_df):
 # ─────────────────────────────────────────────────────────────────────────────
 # TOOLS — PERMISSION AUDIT
 # ─────────────────────────────────────────────────────────────────────────────
-def render_permission_audit(pat_df, side_df):
-    st.markdown("#### 🔐 Permission Audit — paste a user's resource list, see what they can do")
-    st.caption(
-        "Paste the access resource names assigned to a user or role "
-        "(comma-separated or one per line). The tool shows every action they can perform, "
-        "which sidebar tabs they can access, and flags any unrecognised resources."
-    )
-    raw_input = st.text_area(
-        "Access resources for this user / role",
-        placeholder="MATERIAL_MANAGEMENT\nPROCUREMENT\nADMIN_CATALOG\nor: MATERIAL_MANAGEMENT, PROCUREMENT, ADMIN_CATALOG",
-        height=130, key="pa_input",
-        help="Paste from Uniware role config. One per line or comma-separated.",
-    )
-    if not raw_input.strip(): return
-    # Parse input — handle comma-separated or newline-separated
-    raw_resources = [r.strip() for r in re.split(r'[,\n]', raw_input) if r.strip()]
-    all_known = set(pat_df["Access Resource"].unique()) | set(side_df["Access Resource"].unique())
-    valid   = [r for r in raw_resources if r.upper() in {x.upper() for x in all_known}]
-    invalid = [r for r in raw_resources if r.upper() not in {x.upper() for x in all_known}]
-    # Normalise case
-    res_map_lower = {x.upper(): x for x in all_known}
-    valid_normalised = [res_map_lower[r.upper()] for r in valid]
 
-    # Summary metrics
-    pat_allowed  = pat_df[pat_df["Access Resource"].isin(valid_normalised)]
-    side_allowed = side_df[side_df["Access Resource"].isin(valid_normalised)]
+# Predefined role templates — common Uniware warehouse roles
+PREDEFINED_ROLES: dict[str, list[str]] = {
+    "Picker": [
+        "PICKLIST_VIEW", "PICKLIST_CREATE", "LOOKUP", "MINIMAL", "INFLOW_ITEM_LABEL",
+    ],
+    "Packer": [
+        "PICKLIST_VIEW", "PICKLIST_RECEIVE", "SHIPPING", "LOOKUP", "MINIMAL",
+        "CUSTOMER_INVOICE", "INFLOW_ITEM_LABEL",
+    ],
+    "Inbound Executive (GRN)": [
+        "INFLOW_GRN_CREATE", "INFLOW_GRN_SEARCH", "INFLOW_GRN_QC",
+        "INFLOW_GRN_TR_EDIT", "INFLOW_GRN_NTR_EDIT",
+        "INFLOW_INVENTORY_ADJUST", "INFLOW_ITEM_LABEL", "LOOKUP", "MINIMAL",
+    ],
+    "Putaway Executive": [
+        "PUTAWAY", "INFLOW_ITEM_LABEL", "LOOKUP", "MINIMAL",
+    ],
+    "Shipping / Dispatch Executive": [
+        "SHIPPING", "PICKLIST_VIEW", "PICKLIST_RECEIVE",
+        "CUSTOMER_INVOICE", "EXPORT", "LOOKUP", "MINIMAL",
+    ],
+    "Returns Executive": [
+        "RETURNS", "INFLOW_GRN_CREATE", "INFLOW_GRN_SEARCH", "LOOKUP", "MINIMAL",
+    ],
+    "Procurement Manager": [
+        "PROCUREMENT", "PO_APPROVE", "PO_CLOSE",
+        "INFLOW_GRN_CREATE", "INFLOW_GRN_SEARCH", "LOOKUP", "EXPORT", "MINIMAL",
+    ],
+    "Catalog Manager": [
+        "ADMIN_CATALOG", "LOOKUP", "EXPORT", "IMPORT", "MINIMAL",
+    ],
+    "Warehouse Manager": [
+        "PICKLIST_CREATE", "PICKLIST_EDIT", "PICKLIST_VIEW", "PICKLIST_RECEIVE",
+        "INFLOW_GRN_CREATE", "INFLOW_GRN_SEARCH", "INFLOW_GRN_QC",
+        "INFLOW_GRN_TR_EDIT", "INFLOW_GRN_NTR_EDIT",
+        "INFLOW_INVENTORY_ADJUST", "INFLOW_ITEM_LABEL",
+        "SHIPPING", "PUTAWAY", "RETURNS",
+        "LOOKUP", "EXPORT", "ALERT", "MINIMAL",
+    ],
+    "Channel Manager": [
+        "SOURCES_VIEW", "CHANNELS_ADMIN", "ADMIN_CATALOG_VIEW",
+        "LOOKUP", "EXPORT", "MINIMAL",
+    ],
+    "Cycle Count Executive": [
+        "CYCLE_COUNT", "LOOKUP", "MINIMAL",
+    ],
+    "Gatepass Executive": [
+        "MATERIAL_MANAGEMENT", "LOOKUP", "MINIMAL",
+    ],
+}
 
-    m1,m2,m3,m4 = st.columns(4)
-    m1.metric("Resources given",    len(raw_resources))
-    m2.metric("Recognised",         len(valid),
+
+def _run_audit(raw_resources: list[str], pat_df: pd.DataFrame, side_df: pd.DataFrame):
+    """Run audit given a list of resource name strings. Shared by both modes."""
+    all_known     = set(pat_df["Access Resource"].unique()) | set(side_df["Access Resource"].unique())
+    known_upper   = {x.upper(): x for x in all_known}
+    valid         = [r for r in raw_resources if r.upper() in known_upper]
+    invalid       = [r for r in raw_resources if r.upper() not in known_upper]
+    valid_norm    = [known_upper[r.upper()] for r in valid]
+
+    pat_allowed   = pat_df[pat_df["Access Resource"].isin(valid_norm)]
+    side_allowed  = side_df[side_df["Access Resource"].isin(valid_norm)]
+
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Resources given",  len(raw_resources))
+    m2.metric("Recognised",       len(valid),
               help="Resources found in the access pattern dump or sidebar mapping.")
-    m3.metric("URLs accessible",    len(pat_allowed),
+    m3.metric("URLs accessible",  len(pat_allowed),
               help="Total backend URL patterns this permission set covers.")
-    m4.metric("Sidebar tabs",       len(side_allowed),
+    m4.metric("Sidebar tabs",     len(side_allowed),
               help="Number of sidebar navigation items accessible.")
 
     if invalid:
         st.markdown(
-            f'<div class="warn-strip"><b>⚠️ {len(invalid)} unrecognised resource(s) — '
-            f'not found in either data source:</b><br>'
+            f'<div class="warn-strip"><b>⚠️ {len(invalid)} unrecognised resource(s):</b><br>'
             + "  ".join(f'<span class="res-pill" style="background:#fff3e0;color:#e65100">{r}</span>'
                         for r in invalid)
             + '</div>', unsafe_allow_html=True,
         )
 
-    if not valid_normalised:
+    if not valid_norm:
         st.error("None of the provided resources were recognised. Check spelling.")
         return
 
     st.divider()
-
-    # READ / WRITE breakdown
-    rc = int((pat_allowed["Type"]=="READ").sum())
-    wc = int((pat_allowed["Type"]=="WRITE").sum())
+    rc = int((pat_allowed["Type"] == "READ").sum())
+    wc = int((pat_allowed["Type"] == "WRITE").sum())
     st.markdown(
         f'<div class="info-strip">'
         f'This permission set allows <b>{rc} READ</b> and <b>{wc} WRITE</b> actions '
@@ -1060,43 +1101,96 @@ def render_permission_audit(pat_df, side_df):
         f'</div>', unsafe_allow_html=True,
     )
 
-    audit_tab1, audit_tab2, audit_tab3 = st.tabs([
+    a1, a2, a3 = st.tabs([
         f"📋 URL Patterns ({len(pat_allowed)})",
         f"🗂️ Sidebar Tabs ({len(side_allowed)})",
-        f"📊 Per-Resource Breakdown ({len(valid_normalised)})",
+        f"📊 Per-Resource Breakdown ({len(valid_norm)})",
     ])
-
-    with audit_tab1:
+    with a1:
         if pat_allowed.empty:
             st.info("No URL patterns found for these resources.")
         else:
             st.dataframe(
-                pat_allowed[["Access Resource","Activity","Type","Scope","URL Pattern"]].reset_index(drop=True),
-                use_container_width=True, hide_index=True, height=480, column_config=COL_CFG,
+                pat_allowed[["Access Resource", "Activity", "Type", "Scope", "URL Pattern"]].reset_index(drop=True),
+                use_container_width=True, hide_index=True, height=460, column_config=COL_CFG,
             )
             st.download_button("⬇️ Download accessible URLs (CSV)",
                                pat_allowed.to_csv(index=False).encode("utf-8"),
-                               "permission_audit_urls.csv","text/csv")
-
-    with audit_tab2:
+                               "permission_audit_urls.csv", "text/csv")
+    with a2:
         if side_allowed.empty:
             st.info("No sidebar tabs match these resources.")
         else:
             st.dataframe(
-                side_allowed[["Tab Name","Side Tab Group","Access Resource","Type","Activity"]].reset_index(drop=True),
-                use_container_width=True, hide_index=True, height=400, column_config=COL_CFG,
+                side_allowed[["Tab Name", "Side Tab Group", "Access Resource", "Type", "Activity"]].reset_index(drop=True),
+                use_container_width=True, hide_index=True, height=380, column_config=COL_CFG,
             )
-
-    with audit_tab3:
-        breakdown = (pat_allowed.groupby(["Access Resource","Type"], as_index=False)
-                     .agg(URLs=("URL Pattern","nunique"),
-                          Activities=("Activity",lambda s:"  ·  ".join(sorted(set(s))[:4])))
-                     .sort_values("URLs",ascending=False))
+    with a3:
+        breakdown = (
+            pat_allowed.groupby(["Access Resource", "Type"], as_index=False)
+            .agg(URLs=("URL Pattern", "nunique"),
+                 Activities=("Activity", lambda s: "  ·  ".join(sorted(set(s))[:4])))
+            .sort_values("URLs", ascending=False)
+        )
         st.dataframe(breakdown, use_container_width=True, hide_index=True,
-                     column_config={"Access Resource":st.column_config.TextColumn(width=240),
-                                    "Type":st.column_config.TextColumn(width=80),
-                                    "URLs":st.column_config.NumberColumn("URL Count",width=90),
-                                    "Activities":st.column_config.TextColumn("Sample Activities",width=400)})
+                     column_config={
+                         "Access Resource": st.column_config.TextColumn(width=240),
+                         "Type":            st.column_config.TextColumn(width=80),
+                         "URLs":            st.column_config.NumberColumn("URL Count", width=90),
+                         "Activities":      st.column_config.TextColumn("Sample Activities", width=400),
+                     })
+
+
+def render_permission_audit(pat_df: pd.DataFrame, side_df: pd.DataFrame):
+    st.markdown("#### 🔐 Permission Audit — see what a user can do")
+    st.caption(
+        "Choose a predefined role template OR paste custom resource names. "
+        "The tool shows every action allowed, which sidebar tabs are accessible, "
+        "and flags any unrecognised resources."
+    )
+
+    mode = st.radio(
+        "Input mode",
+        ["🏷️ Predefined role", "✏️ Custom resources"],
+        horizontal=True,
+        key="pa_mode",
+        help="Predefined role: pick a common Uniware role and see its permissions instantly.  "
+             "Custom: paste any resource names from a Uniware role config.",
+    )
+
+    if "Predefined" in mode:
+        role_pick = st.selectbox(
+            "Select a role",
+            list(PREDEFINED_ROLES.keys()),
+            key="pa_role",
+            help="These are common Uniware warehouse roles with typical resource assignments. "
+                 "Resources shown are the standard minimum for each role.",
+        )
+        resources = PREDEFINED_ROLES[role_pick]
+
+        # Show what resources are in this role
+        pills = "".join(f'<span class="res-pill">{r}</span>' for r in resources)
+        st.markdown(
+            f'<div class="info-strip">'
+            f'<b>{role_pick}</b> — {len(resources)} access resource(s):<br><br>{pills}'
+            f'</div>', unsafe_allow_html=True,
+        )
+        st.caption("Copy resource list ↓")
+        st.code(", ".join(resources), language="text")
+        st.divider()
+        _run_audit(resources, pat_df, side_df)
+
+    else:  # Custom
+        raw_input = st.text_area(
+            "Access resources for this user / role",
+            placeholder="MATERIAL_MANAGEMENT\nPROCUREMENT\nADMIN_CATALOG\n\nor comma-separated:\nMATERIAL_MANAGEMENT, PROCUREMENT, ADMIN_CATALOG",
+            height=130, key="pa_input",
+            help="Paste from Uniware role config. One per line or comma-separated.",
+        )
+        if not raw_input.strip():
+            return
+        raw_resources = [r.strip() for r in re.split(r'[,\n]', raw_input) if r.strip()]
+        _run_audit(raw_resources, pat_df, side_df)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # TOOLS TAB
