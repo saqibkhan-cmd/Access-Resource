@@ -661,7 +661,8 @@ def render_tab(df, pool, quick_terms, sk, flat_cols, group_cols,
 
     if "Grouped" in view:
         render_grouped(result, group_cols, sk,
-                       pat_df_ref or pat_df, side_df_ref or side_df)
+                       pat_df_ref if pat_df_ref is not None else pat_df,
+                       side_df_ref if side_df_ref is not None else side_df)
     else:
         st.dataframe(result[[c for c in flat_cols if c in result.columns]],
                      use_container_width=True, hide_index=True,
