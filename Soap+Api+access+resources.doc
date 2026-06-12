@@ -1,0 +1,1672 @@
+Date: Thu, 11 Jun 2026 06:10:52 +0000 (UTC)
+Message-ID: <875001329.29.1781158252439@215dcd2e5c10>
+Subject: Exported From Confluence
+MIME-Version: 1.0
+Content-Type: multipart/related; 
+	boundary="----=_Part_28_1212129933.1781158252438"
+
+------=_Part_28_1212129933.1781158252438
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+Content-Location: file:///C:/exported.html
+
+<html xmlns:o=3D'urn:schemas-microsoft-com:office:office'
+      xmlns:w=3D'urn:schemas-microsoft-com:office:word'
+      xmlns:v=3D'urn:schemas-microsoft-com:vml'
+      xmlns=3D'urn:w3-org-ns:HTML'>
+<head>
+    <meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Dutf-8=
+">
+    <title>Soap Api access resources</title>
+    <!--[if gte mso 9]>
+    <xml>
+        <o:OfficeDocumentSettings>
+            <o:TargetScreenSize>1024x640</o:TargetScreenSize>
+            <o:PixelsPerInch>72</o:PixelsPerInch>
+            <o:AllowPNG/>
+        </o:OfficeDocumentSettings>
+        <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>90</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+        </w:WordDocument>
+    </xml>
+    <![endif]-->
+    <style>
+                <!--
+        @page Section1 {
+            size: 8.5in 11.0in;
+            margin: 1.0in;
+            mso-header-margin: .5in;
+            mso-footer-margin: .5in;
+            mso-paper-source: 0;
+        }
+
+        table {
+            border: solid 1px;
+            border-collapse: collapse;
+        }
+
+        table td, table th {
+            border: solid 1px;
+            padding: 5px;
+        }
+
+        td {
+            page-break-inside: avoid;
+        }
+
+        tr {
+            page-break-after: avoid;
+        }
+
+        div.Section1 {
+            page: Section1;
+        }
+
+        /* Confluence print stylesheet. Common to all themes for print medi=
+a */
+/* Full of !important until we improve batching for print CSS */
+
+@media print {
+    #main {
+        padding-bottom: 1em !important; /* The default padding of 6em is to=
+o much for printouts */
+    }
+
+    body {
+        font: var(--ds-font-body-small, Arial, Helvetica, FreeSans, sans-se=
+rif);
+    }
+
+    body, #full-height-container, #main, #page, #content, .has-personal-sid=
+ebar #content {
+        background: var(--ds-surface, #fff) !important;
+        color: var(--ds-text, #000) !important;
+        border: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
+    }
+
+    a, a:link, a:visited, a:focus, a:hover, a:active {
+        color: var(--ds-text, #000);
+    }
+
+    #content h1,
+    #content h2,
+    #content h3,
+    #content h4,
+    #content h5,
+    #content h6 {
+        page-break-after: avoid;
+    }
+
+    pre {
+        font: var(--ds-font-code, Monaco, "Courier New", monospace);
+    }
+
+    #header,
+    .aui-header-inner,
+    #navigation,
+    #sidebar,
+    .sidebar,
+    #personal-info-sidebar,
+    .ia-fixed-sidebar,
+    .page-actions,
+    .navmenu,
+    .ajs-menu-bar,
+    .noprint,
+    .inline-control-link,
+    .inline-control-link a,
+    a.show-labels-editor,
+    .global-comment-actions,
+    .comment-actions,
+    .quick-comment-container,
+    #addcomment {
+        display: none !important;
+    }
+
+    /* CONF-28544 cannot print multiple pages in IE */
+    #splitter-content {
+        position: relative !important;
+    }
+
+    .comment .date::before {
+        content: none !important; /* remove middot for print view */
+    }
+
+    h1.pagetitle img {
+        height: auto;
+        width: auto;
+    }
+
+    .print-only {
+        display: block;
+    }
+
+    #footer {
+        position: relative !important; /* CONF-17506 Place the footer at en=
+d of the content */
+        margin: 0;
+        padding: 0;
+        background: none;
+        clear: both;
+    }
+
+    #poweredby {
+        border-top: none;
+        background: none;
+    }
+
+    #poweredby li.print-only {
+        display: list-item;
+        font-style: italic;
+    }
+
+    #poweredby li.noprint {
+        display: none;
+    }
+
+    /* no width controls in print */
+    .wiki-content .table-wrap,
+    .wiki-content p,
+    .panel .codeContent,
+    .panel .codeContent pre,
+    .image-wrap {
+        overflow: visible !important;
+    }
+
+    /* TODO - should this work? */
+    #children-section,
+    #comments-section .comment,
+    #comments-section .comment .comment-body,
+    #comments-section .comment .comment-content,
+    #comments-section .comment p {
+        page-break-inside: avoid;
+    }
+
+    #page-children a {
+        text-decoration: none;
+    }
+
+    /**
+     hide twixies
+
+     the specificity here is a hack because print styles
+     are getting loaded before the base styles. */
+    #comments-section.pageSection .section-header,
+    #comments-section.pageSection .section-title,
+    #children-section.pageSection .section-header,
+    #children-section.pageSection .section-title,
+    .children-show-hide {
+        padding-left: 0;
+        margin-left: 0;
+    }
+
+    .children-show-hide.icon {
+        display: none;
+    }
+
+    /* personal sidebar */
+    .has-personal-sidebar #content {
+        margin-right: 0px;
+    }
+
+    .has-personal-sidebar #content .pageSection {
+        margin-right: 0px;
+    }
+
+    .no-print, .no-print * {
+        display: none !important;
+    }
+}
+-->
+    </style>
+</head>
+<body>
+    <h1>Soap Api access resources</h1>
+    <div class=3D"Section1">
+        <div class=3D"table-wrap">
+<table data-layout=3D"wide" data-local-id=3D"5abd3723-5606-43d7-900e-72d061=
+b172f7" class=3D"confluenceTable">
+<colgroup>
+<col style=3D"width: 517.0px;">
+<col style=3D"width: 121.0px;">
+<col style=3D"width: 319.0px;">
+</colgroup>
+<tbody>
+<tr>
+<td data-highlight-colour=3D"#f4f5f7" class=3D"confluenceTd">
+<p><strong>Soap Api</strong></p></td>
+<td data-highlight-colour=3D"#f4f5f7" class=3D"confluenceTd">
+<p><strong>Level</strong></p></td>
+<td data-highlight-colour=3D"#f4f5f7" class=3D"confluenceTd">
+<p><strong>Access Resources</strong></p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateSaleOrderAlternateRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>PROCUREMENT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>AcceptSaleOrderAlternateRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>SALE_ORDER_ALTERNATE_ACCEPT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateSaleOrderRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>IMPORT_SALE_ORDERS</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CancelSaleOrderRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>SALE_ORDER_CANCEL_ITEM</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CancelReversePickupRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>REVERSE_PICKUP_EDIT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>HoldSaleOrderRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>SALE_ORDER_HOLD_UNHOLD</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>HoldSaleOrderItemsRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>SALE_ORDER_HOLD_UNHOLD</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetSaleOrderRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>SALE_ORDER_CANCEL_ITEM</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateItemTypeRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>ADMIN_CATALOG</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>EditItemTypeRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>ADMIN_CATALOG</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateOrEditItemTypeRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>ADMIN_CATALOG</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateOrEditFacilityItemTypeRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>ADMIN_CATALOG</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>EditFacilityRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>CREATE_TENANT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>UnholdSaleOrderRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>SALE_ORDER_HOLD_UNHOLD</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>UnholdSaleOrderItemsRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>SALE_ORDER_HOLD_UNHOLD</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>AutoCompletePutawayRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>DUAL_COMPANY_API</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>ReceiveItemFromWholesaleRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>DUAL_COMPANY_API</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>ReleaseShelfRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>LOOKUP_SALE_ORDER</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>JabongWholesaleHandleShipmentReturnRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>DUAL_COMPANY_API</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>SearchSaleOrderRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>LOOKUP_SALE_ORDER</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>EditSaleOrderAddressRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>SALE_ORDER_ADDRESS_EDIT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>ReceiveShippingPackageFromWholesaleRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>DUAL_COMPANY_API</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetInventorySnapshotRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>LOOKUP_INVENTORY</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>InventoryAdjustmentRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>IMPORT_INVENTORY_ADJUSTMENT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreatePurchaseOrderRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>PROCUREMENT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>AddOrEditPurchaseOrderItemsRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>PROCUREMENT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>ApprovePurchaseOrderRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>PROCUREMENT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateOrEditCategoryRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>ADMIN_CATALOG</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateVendorDetailsRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>VENDOR_CREATE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>EditVendorDetailsRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>VENDOR_CREATE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateApprovedPurchaseOrderRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>PROCUREMENT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>ReceiveReturnFromRetailRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>DUAL_COMPANY_API</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateSaleOrderItemAlternateRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>SALE_ORDER_ALTERNATE_ACCEPT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>AcceptSaleOrderItemAlternateRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>SALE_ORDER_ALTERNATE_ACCEPT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateVendorItemTypeRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>VENDOR_CATALOG</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetShippingManifestRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>SHIPPING</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetManifestRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>SHIPPING</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>SearchItemTypesRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>ADMIN_CATALOG</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetItemTypeDetailRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>ADMIN_CATALOG</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateReversePickupRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>REVERSE_PICKUP_CREATE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>EditSaleOrderMetadataRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>SALE_ORDER_METADATA_EDIT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateTenantRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>CREATE_TENANT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateFacilityRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>CREATE_TENANT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetVendorPurchaseOrdersRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>VENDOR_API</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetVendorPurchaseOrderDetailRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>VENDOR_API</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateCustomerRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>VENDOR_CREATE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>EditCustomerRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>VENDOR_CREATE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>UpdateTrackingStatusRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>UPDATE_TRACKING_STATUS</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateOrEditVendorItemTypeRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>VENDOR_CATALOG</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>ClosePurchaseOrderRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>PROCUREMENT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetBackOrderItemsRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>VENDOR_API</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>EditVendorItemTypeRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>VENDOR_API</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateOrEditVendorRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetItemDetailRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>LOOKUP_SALE_ORDER</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>EditSaleOrderItemMetadataRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>SALE_ORDER_METADATA_EDIT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetPurchaseOrdersRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>PROCUREMENT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetPurchaseOrderDetailRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>PROCUREMENT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetInflowReceiptsRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>INFLOW_GRN_SEARCH</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetInflowReceiptDetailRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>INFLOW_GRN_SEARCH</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetLoginTokenRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>EditScriptConfigRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>ReloadConfigurationRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetShippingPackagesRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetShippingPackageDetailRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateInvoiceAndGenerateLabelRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>CUSTOMER_INVOICE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetShippingPackageShipmentDetailsRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>CUSTOMER_INVOICE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateInvoiceAndAllocateShippingProviderRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>CUSTOMER_INVOICE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>ForceDispatchShippingPackageRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>FORCE_DISPATCH_SHIPPING_PACKAGE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>AllocateShippingProviderRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>CUSTOMER_INVOICE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateShippingManifestRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>DispatchShippingPackageRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>DispatchSaleOrderItemsRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>AddShippingPackagesToManifestRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CloseShippingManifestRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetServiceabilityRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>EXPORT_LOCATIONS</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>AddOrEditItemLabelsRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>INFLOW_GRN_CREATE_LABELS</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>EditGatePassRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>MATERIAL_MANAGEMENT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetVendorItemTypesRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>VENDOR_API</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>ReceiveReversePickupFromRetailRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>REVERSE_PICKUP_CREATE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>SmartSplitShippingPackageRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>SHIPPING</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>SplitShippingPackageRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>SHIPPING</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>VerifySaleOrderRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>VERIFY_PENDING_ORDERS</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>MarkItemDamagedOutboundQCRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>SHIPPING</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetTenantTransactionDetailsRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateASNRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>ASN_CREATE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetCustomizedDummyTemplateRequest</p></td>
+<td class=3D"confluenceTd">
+<p>GLOBAL</p></td>
+<td class=3D"confluenceTd">
+<p>ADMIN_TEMPLATE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>EditShippingPackageRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>IMPORT_SALE_ORDERS</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateVendorRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>VENDOR_CREATE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>EditVendorRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>VENDOR_CREATE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>SetSaleOrderPriorityRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateGatePassRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>MATERIAL_MANAGEMENT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>AddItemToGatePassRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>MATERIAL_MANAGEMENT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>AddOrEditNonTraceableGatePassItemRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>MATERIAL_MANAGEMENT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>AddNonTraceableGatePassItemRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>MATERIAL_MANAGEMENT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CompleteGatePassRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>MATERIAL_MANAGEMENT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GenerateItemLabelsRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>VENDOR_API</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>PickShippingPackageRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>UnblockSaleOrderItemsInventoryRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>SALE_ORDER_HOLD_UNHOLD</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>ModifyPacketSaleOrderRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>SHIPPING</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetItemTypeInventoryRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>LOOKUP_INVENTORY</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetTaxTypeConfigurationRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>SearchShippingPackageRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>LOOKUP_SHIPPING_PACKAGE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateInvoiceRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>CUSTOMER_INVOICE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetInvoiceLabelRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>CUSTOMER_INVOICE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateInflowReceiptRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>INFLOW_GRN_CREATE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>AddItemToInflowReceiptRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>INFLOW_GRN_CREATE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>AddItemSKUToInflowReceiptRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>INFLOW_GRN_CREATE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>DeactivateTenantRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>CREATE_TENANT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>ReactivateTenantRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>CREATE_TENANT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>AddShipmentsToBatchRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>SHIPMENT_BATCH</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateVendorCreditInvoiceRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>VENDOR_INVOICE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>AddEditVendorInvoiceItemRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>VENDOR_INVOICE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetShippingProviderParametersRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateBatchRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>SHIPMENT_BATCH</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>EditAdvanceShippingNoticeRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>VENDOR</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>MarkSaleOrderReturnedRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>SALE_ORDER_RETURN</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateUserRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>ADMIN_USER</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>SwitchSaleOrderItemFacilityRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>SearchGatePassRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>MATERIAL_MANAGEMENT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>RefreshBroadcastMessageRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CompletePutawayRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>PUTAWAY_COMPLETE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreatePutawayListRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>PUTAWAY_CREATE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreatePutawayRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>PUTAWAY_CREATE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>AddReversePickupSaleOrderItemsToPutawayRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>PUTAWAY_CREATE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>ChangeProductTypeRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetItemTypeRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>ADMIN_CATALOG</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>AllowSourceRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>CREATE_TENANT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>AddOrEditShippingProviderLocationRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>IMPORT_SHIPPING_PROVIDER_LOCATION</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetAvailableFacilitiesRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetFacilityDetailsRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>MarkShippingPackageDeliveredRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>SHIPPING</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>MarkSaleOrderItemsDeliveredRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>SHIPPING</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetAccessResourceRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td data-highlight-colour=3D"#ffffff" class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetFacilitiesSLARequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>ResendPODCodeRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>AddItemDetailsRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>ITEM_DETAILING</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateInvoiceWithDetailsRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>CUSTOMER_INVOICE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetInvoiceDetailsRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetInvoiceDetailsByCodeRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>VerifyShippingPackagePODCodeRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>STORE_PICKUP</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>VerifySaleOrderItemsPODCodeRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>STORE_PICKUP</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetShippingManifestLabelRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>SHIPPING</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>ChangeInvoiceCodeRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetShippingPackagesByStatusCodeRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>IMPORT_SALE_ORDERS</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetFailedSaleOrdersRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>IMPORT_SALE_ORDERS</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetUnverifiedSaleOrdersRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>IMPORT_SALE_ORDERS</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetFacilitySLARequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>PingUniwareRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>AddSaleOrderToManifestRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>DispatchSaleOrderRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateInvoiceBySaleOrderCodeRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>CUSTOMER_INVOICE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateInvoiceAndAllocateShippingProviderBySaleOrderRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>CUSTOMER_INVOICE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetConnectorStatusRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>CHANNELS_VIEW</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>EditChannelItemTypePriceRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>PRICE_UPDATE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CancelPriceRecommendationRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>RECOMMENDATION</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreatePriceRecommendationRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>RECOMMENDATION</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateInventoryRecommendationRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>RECOMMENDATION</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetPriceRecommendationsRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>RECOMMENDATION</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetChannelItemTypePricesRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>RECOMMENDATION</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetTenantDetailsRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetChannelItemTypeDetailsRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>CHANNELS_VIEW</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetServicableProductRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>LOOKUP_INVENTORY</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>EncryptGlobalChannelCredentialsRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>CHANNELS_ADMIN</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateGatePassOrderRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>MATERIAL_MANAGEMENT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CreateChannelItemTypeRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>CHANNELS_VIEW</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetVendorsRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>VENDOR_API</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>GetGatePassDetailsRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>MATERIAL_MANAGEMENT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CompleteReturnsRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>REVERSE_PICKUP_EDIT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>EditReversePickupRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>REVERSE_PICKUP_EDIT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>AddSaleOrderDocumentAttachmentRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>PushSaleOrderStatusRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>SALE_ORDER_STATUS_UPDATE</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>RejectPurchaseOrderRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>PROCUREMENT</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>UpdateSaleOrderPaymentDetailsRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>IMPORT_SALE_ORDERS</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>AllocateInventoryCreatePackageRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>LOOKUP_SALE_ORDER</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>AutoDispatchShippingPackageRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>MINIMAL</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>CancelSaleOrderBySkuRequest</p></td>
+<td class=3D"confluenceTd">
+<p>TENANT</p></td>
+<td class=3D"confluenceTd">
+<p>SALE_ORDER_CANCEL_ITEM</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>AutoAssignReverseShippingProviderRequest</p></td>
+<td class=3D"confluenceTd">
+<p>FACILITY</p></td>
+<td class=3D"confluenceTd">
+<p>REVERSE_PICKUP_AUTO</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+    </div>
+</body>
+</html>
+------=_Part_28_1212129933.1781158252438--
