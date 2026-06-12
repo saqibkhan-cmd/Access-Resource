@@ -26,9 +26,20 @@ from bs4 import BeautifulSoup
 st.set_page_config(page_title="Uniware Access Auditor", page_icon="🛡️", layout="wide")
 
 def _find(patterns):
-    for p in patterns:
-        hits = glob.glob(p)
-        if hits: return hits[0]
+    """Find a file by trying multiple glob patterns across likely directories."""
+    import os
+    # Directories to search: current dir, script dir, repo root
+    base_dirs = [
+        "",                          # relative to cwd
+        os.path.dirname(os.path.abspath(__file__)) + "/",  # same dir as app.py
+        "/mount/src/access-resource/",  # Streamlit Cloud repo root (common)
+        "/mount/src/",               # Streamlit Cloud src root
+    ]
+    for base in base_dirs:
+        for p in patterns:
+            hits = glob.glob(base + p)
+            if hits: return hits[0]
+    # Return pattern as-is (will show "not found" error gracefully)
     return patterns[0]
 
 TXT_FILE  = _find(["access_patterns*.txt", "access_pattern*.txt"])
