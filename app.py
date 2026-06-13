@@ -5050,34 +5050,6 @@ def render_url_checker(pat_df,rest_df,sidebar_lookup):
 # ─────────────────────────────────────────────────────────────────────────────
 # TOOLS — ROLE BUILDER
 # ─────────────────────────────────────────────────────────────────────────────
-def render_role_builder(pat_df):
-    st.markdown("#### 🧩 Role Builder — pick activities, get the permission list")
-    st.caption("Select every activity this role needs. Required access resources are calculated automatically.")
-    srch=st.text_input("Filter activities",placeholder="gatepass, invoice, grn…",key="rb_srch")
-    pool_df=pat_df.copy()
-    if srch.strip():
-        q=srch.strip().lower()
-        mask=(pool_df["Activity"].str.lower().str.contains(q,na=False)|
-              pool_df["URL Pattern"].str.lower().str.contains(q,na=False)|
-              pool_df["Access Resource"].str.lower().str.contains(q,na=False))
-        pool_df=pool_df[mask]
-    options=sorted(pool_df["Activity"].unique())
-    if not options: st.warning("No activities match that filter."); return
-    chosen=st.multiselect("Select activities",options=options,key="rb_acts",
-                          help="Required resources update instantly as you select.")
-    if chosen:
-        role_df=pool_df[pool_df["Activity"].isin(chosen)]
-        required=sorted(role_df["Access Resource"].unique())
-        st.markdown(f"**{len(required)} access resource(s) required:**")
-        pills="".join(f'<span class="res-pill">{r}</span>' for r in required)
-        st.markdown(f'<div class="info-strip">{pills}</div>',unsafe_allow_html=True)
-        st.caption("Copy as list ↓"); st.code(", ".join(required),language="text")
-        with st.expander("Full breakdown"):
-            st.dataframe(role_df[["Activity","Access Resource","Type","Scope","URL Pattern"]],
-                         use_container_width=True,hide_index=True,column_config=COL_CFG)
-        st.download_button("⬇️ Download role CSV",
-                           role_df.to_csv(index=False).encode("utf-8"),"custom_role.csv","text/csv")
-
 # ─────────────────────────────────────────────────────────────────────────────
 # TOOLS — COMPARE RESOURCES
 # ─────────────────────────────────────────────────────────────────────────────
@@ -5105,7 +5077,7 @@ def render_compare(pat_df):
     _show(ta,only_a,df_a); _show(ts,shared,pd.concat([df_a,df_b]).drop_duplicates("URL Pattern")); _show(tb,only_b,df_b)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# TOOLS — PERMISSION AUDIT
+# TOOLS — PERMISSION & ROLE AUDIT  (merged)
 # ─────────────────────────────────────────────────────────────────────────────
 def _run_audit(raw_resources,pat_df,side_df,soap_df,rest_df,imp_df,exp_df):
     all_known=(set(pat_df["Access Resource"].unique())|set(side_df["Access Resource"].unique())|
@@ -5125,7 +5097,7 @@ def _run_audit(raw_resources,pat_df,side_df,soap_df,rest_df,imp_df,exp_df):
     exp_a=exp_df[exp_df["Access Resource"].isin(valid_norm)] if not exp_df.empty else pd.DataFrame()
 
     m1,m2,m3,m4=st.columns(4)
-    m1.metric("Resources given",len(raw_resources))
+    m1.metric("Resources",len(raw_resources))
     m2.metric("Recognised",len(valid),help="Found in any data source.")
     m3.metric("URLs accessible",len(pat_a)+len(rest_a),help="Pattern Dump + REST API URLs.")
     m4.metric("Sidebar tabs",len(side_a))
@@ -5140,7 +5112,7 @@ def _run_audit(raw_resources,pat_df,side_df,soap_df,rest_df,imp_df,exp_df):
                 f'<b>{wc} WRITE</b> actions across <b>{pat_a["Access Resource"].nunique()} resources</b>.'
                 f'</div>',unsafe_allow_html=True)
     tabs=st.tabs([f"📋 Pattern Dump ({len(pat_a)})",f"🗂️ Sidebar ({len(side_a)})",
-                  f"🔌 SOAP API ({len(soap_a)})",f"🔌 REST API ({len(rest_a)})",
+                  f"🔌 SOAP ({len(soap_a)})",f"🔌 REST ({len(rest_a)})",
                   f"📥 Import ({len(imp_a)})",f"📤 Export ({len(exp_a)})",
                   f"📊 Breakdown ({len(valid_norm)})"])
     def _show_tab(tab,df,cols):
@@ -5171,136 +5143,157 @@ def _run_audit(raw_resources,pat_df,side_df,soap_df,rest_df,imp_df,exp_df):
                        all_combined.to_csv(index=False).encode("utf-8"),
                        "permission_audit.csv","text/csv")
 
-def render_permission_audit(pat_df,side_df,soap_df,rest_df,imp_df,exp_df):
-    st.markdown("#### 🔐 Permission Audit — see everything a user can do")
+
+def render_audit_tool(pat_df,side_df,soap_df,rest_df,imp_df,exp_df):
+    """
+    Merged Permission Audit + Role Auditor.
+    Two modes:
+      What can this role do?     → select/paste resources → see all accessible URLs, tabs, APIs
+      What is a user missing?    → select role → paste user's actual resources → see the gap
+    """
+    st.markdown("#### 🔐 Permission & Role Audit")
     n_roles = len(PREDEFINED_ROLES)
-    st.caption(f"Choose a predefined role ({n_roles} roles loaded from live dump) or paste custom resources. Shows access across all 6 sources.")
-    mode=st.radio("Mode",["🏷️ Predefined role","✏️ Custom resources"],horizontal=True,key="pa_mode",
-                  help=f"{n_roles} roles loaded from roles_dump.xlsx — exact resources from live Uniware data.")
-    if "Predefined" in mode:
-        if not PREDEFINED_ROLES:
-            st.error("❌ Roles file `roles_dump.xlsx` not found — place it next to `app.py`.")
-            return
-        role_pick=st.selectbox("Select a role",list(PREDEFINED_ROLES.keys()),key="pa_role",
-                               help="Loaded directly from the Uniware roles dump — 100% accurate.")
-        resources=PREDEFINED_ROLES[role_pick]
-        pills="".join(f'<span class="res-pill">{r}</span>' for r in resources)
-        st.markdown(f'<div class="info-strip"><b>{role_pick}</b> — {len(resources)} resources:<br><br>{pills}</div>',
-                    unsafe_allow_html=True)
-        st.caption("Copy resource list ↓"); st.code(", ".join(resources),language="text")
-        st.divider()
-        _run_audit(resources,pat_df,side_df,soap_df,rest_df,imp_df,exp_df)
-    else:
-        raw=st.text_area("Access resources",
-                         placeholder="MATERIAL_MANAGEMENT\nPROCUREMENT\nor comma-separated",
-                         height=120,key="pa_input")
-        if raw.strip():
-            _run_audit([r.strip() for r in re.split(r'[,\n]',raw) if r.strip()],
-                       pat_df,side_df,soap_df,rest_df,imp_df,exp_df)
 
-# ─────────────────────────────────────────────────────────────────────────────
-# TOOLS — ROLE AUDITOR  (choose a role → paste user's resources → see gaps)
-# ─────────────────────────────────────────────────────────────────────────────
-def render_role_auditor():
-    st.markdown("#### 🔎 Role Auditor — check what a user is missing from their role")
-    st.caption(
-        "Select the role this user **should** have, then paste the access resources "
-        "that are **actually assigned** to them. The tool instantly shows what's missing, "
-        "what's correct, and what's extra."
+    mode = st.radio(
+        "What do you want to do?",
+        ["🔍 What can this role do?", "🕵️ What is a user missing?"],
+        horizontal=True,
+        key="audit_mode",
+        help=(
+            "What can this role do: pick a role or paste resources → see every URL, sidebar tab, "
+            "SOAP/REST API, import/export job this role can access.  "
+            "What is a user missing: pick the expected role → paste what the user actually has → "
+            "instantly see missing, correct, and extra resources."
+        ),
     )
-
-    if not PREDEFINED_ROLES:
-        st.error(f"❌ Roles file not found — place `roles_dump.xlsx` next to `app.py`.")
-        return
-
-    role_pick = st.selectbox(
-        "Select the expected role",
-        list(PREDEFINED_ROLES.keys()),
-        key="ra_role",
-        help="These roles are loaded directly from the live Uniware roles dump — 100% accurate.",
-    )
-    expected = set(PREDEFINED_ROLES[role_pick])
-
-    st.markdown(
-        f'<div class="info-strip">'
-        f'<b>{role_pick}</b> has <b>{len(expected)} expected resources</b> in the dump.'
-        f'</div>', unsafe_allow_html=True,
-    )
-
-    st.markdown("**Paste the access resources actually assigned to this user:**")
-    raw = st.text_area(
-        "Actual resources",
-        placeholder="MINIMAL\nPICKLIST_VIEW\nSHIPPING\n\nor comma-separated:\nMINIMAL, PICKLIST_VIEW, SHIPPING",
-        height=140, key="ra_actual",
-        help="Copy from Uniware user role config. One per line or comma-separated.",
-    )
-    if not raw.strip():
-        # Just show expected resources
-        with st.expander(f"View all {len(expected)} expected resources for {role_pick}", expanded=False):
-            st.code("\n".join(sorted(expected)), language="text")
-        return
-
-    actual = set(r.strip() for r in re.split(r'[,\n]', raw) if r.strip())
-
-    missing = sorted(expected - actual)          # should have but doesn't
-    correct = sorted(expected & actual)          # has and should have
-    extra   = sorted(actual  - expected)         # has but shouldn't (not in role def)
-
-    # ── Summary metrics ───────────────────────────────────────────────────────
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Expected",  len(expected), help="Resources defined for this role in the dump.")
-    m2.metric("✅ Correct", len(correct),  help="Resources the user has that match the role.")
-    m3.metric("❌ Missing", len(missing),  help="Resources in the role definition that are NOT assigned to this user.")
-    m4.metric("⚠️ Extra",   len(extra),    help="Resources assigned to this user that are NOT part of this role definition.")
-
     st.divider()
 
-    # ── Missing — the most important ─────────────────────────────────────────
-    if missing:
-        st.markdown(f"#### ❌ Missing — {len(missing)} resources not assigned to this user")
-        st.caption("These are in the role definition but absent from this user's actual assignment.")
-        pills = "".join(
-            f'<span class="res-pill" style="background:#fce4e4;color:#c62828;border:1px solid #ef9a9a">{r}</span>'
-            for r in missing
+    # ── MODE A: What can this role do? ────────────────────────────────────────
+    if "What can" in mode:
+        st.caption(
+            f"Select a predefined role ({n_roles} loaded from live dump) or paste custom resources. "
+            "Shows access across all 6 sources."
         )
-        st.markdown(f'<div style="margin-bottom:8px">{pills}</div>', unsafe_allow_html=True)
-        st.caption("Copy missing resources ↓")
-        st.code(", ".join(missing), language="text")
-    else:
-        st.success("✅ No missing resources — this user has everything the role requires.")
+        input_mode = st.radio(
+            "Input",
+            ["🏷️ Predefined role", "✏️ Custom resources"],
+            horizontal=True, key="audit_input",
+            help="Predefined role: loaded directly from the Uniware roles dump.  "
+                 "Custom: paste any resource names from a user's role config.",
+        )
 
-    # ── Extra resources ───────────────────────────────────────────────────────
-    if extra:
-        with st.expander(f"⚠️ {len(extra)} extra resources (assigned but not in role definition)", expanded=False):
-            st.caption("These may be intentional additions or leftover from a previous role — review with your admin.")
-            extra_pills = "".join(
-                f'<span class="res-pill" style="background:#fff8e1;color:#f57f17">{r}</span>'
-                for r in extra
+        if "Predefined" in input_mode:
+            role_pick = st.selectbox(
+                "Select role", list(PREDEFINED_ROLES.keys()), key="audit_role_a",
+                help="Exact resources from live Uniware dump — 100% accurate.",
             )
-            st.markdown(extra_pills, unsafe_allow_html=True)
-            st.code(", ".join(extra), language="text")
+            resources = PREDEFINED_ROLES[role_pick]
+            pills = "".join(f'<span class="res-pill">{r}</span>' for r in resources)
+            st.markdown(
+                f'<div class="info-strip"><b>{role_pick}</b> — {len(resources)} resources:'
+                f'<br><br>{pills}</div>', unsafe_allow_html=True,
+            )
+            st.caption("Copy resource list ↓")
+            st.code(", ".join(resources), language="text")
+            st.divider()
+            _run_audit(resources, pat_df, side_df, soap_df, rest_df, imp_df, exp_df)
+        else:
+            raw = st.text_area(
+                "Paste access resources",
+                placeholder="MATERIAL_MANAGEMENT\nPROCUREMENT\n\nor comma-separated:\nMATERIAL_MANAGEMENT, PROCUREMENT",
+                height=120, key="audit_custom_a",
+                help="One per line or comma-separated. Copy from Uniware role config.",
+            )
+            if raw.strip():
+                _run_audit(
+                    [r.strip() for r in re.split(r'[,\n]', raw) if r.strip()],
+                    pat_df, side_df, soap_df, rest_df, imp_df, exp_df,
+                )
 
-    # ── Correct resources ─────────────────────────────────────────────────────
-    with st.expander(f"✅ {len(correct)} correct resources (present and expected)", expanded=False):
-        correct_pills = "".join(f'<span class="res-pill">{r}</span>' for r in correct)
-        st.markdown(correct_pills, unsafe_allow_html=True)
-
-    # ── Full comparison table ─────────────────────────────────────────────────
-    with st.expander("📋 Full comparison table", expanded=False):
-        rows = []
-        for r in sorted(expected | actual):
-            status = ("✅ Correct" if r in correct
-                      else ("❌ Missing" if r in missing else "⚠️ Extra"))
-            rows.append({"Access Resource": r, "Status": status,
-                         "In Role Definition": "✓" if r in expected else "✗",
-                         "Assigned to User":   "✓" if r in actual   else "✗"})
-        cdf = pd.DataFrame(rows)
-        st.dataframe(cdf, use_container_width=True, hide_index=True, height=400)
-        st.download_button(
-            "⬇️ Download comparison (CSV)",
-            data=cdf.to_csv(index=False).encode("utf-8"),
-            file_name=f"role_audit_{role_pick}.csv", mime="text/csv",
+    # ── MODE B: What is a user missing? ───────────────────────────────────────
+    else:
+        st.caption(
+            "Select the role a user **should** have, then paste the resources "
+            "**actually assigned** to them. See exactly what's missing, correct, and extra."
         )
+
+        role_pick = st.selectbox(
+            "Expected role (what the user should have)",
+            list(PREDEFINED_ROLES.keys()), key="audit_role_b",
+            help="Loaded from live Uniware dump — exact expected resource set for this role.",
+        )
+        expected = set(PREDEFINED_ROLES[role_pick])
+
+        # Show expected resources collapsed
+        with st.expander(f"View all {len(expected)} expected resources for  {role_pick}", expanded=False):
+            st.code("\n".join(sorted(expected)), language="text")
+
+        raw = st.text_area(
+            "Actual resources assigned to this user",
+            placeholder="MINIMAL\nPICKLIST_VIEW\nSHIPPING\n\nor comma-separated",
+            height=130, key="audit_actual",
+            help="Copy from the user's role config in Uniware.",
+        )
+        if not raw.strip():
+            return
+
+        actual  = set(r.strip() for r in re.split(r'[,\n]', raw) if r.strip())
+        missing = sorted(expected - actual)
+        correct = sorted(expected & actual)
+        extra   = sorted(actual   - expected)
+
+        # Metrics
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Expected",   len(expected), help="Resources the role should have.")
+        m2.metric("✅ Correct",  len(correct),  help="Present and expected.")
+        m3.metric("❌ Missing",  len(missing),  help="Should have but doesn't — action required.")
+        m4.metric("⚠️ Extra",    len(extra),    help="Has but not in role definition.")
+        st.divider()
+
+        # Missing — most important, shown first and prominent
+        if missing:
+            st.markdown(f"#### ❌ Missing — {len(missing)} resources not assigned to this user")
+            st.caption("In the role definition but absent from this user's actual assignment.")
+            pills = "".join(
+                f'<span class="res-pill" style="background:#fce4e4;color:#c62828;'
+                f'border:1px solid #ef9a9a">{r}</span>' for r in missing
+            )
+            st.markdown(f'<div style="margin-bottom:6px">{pills}</div>', unsafe_allow_html=True)
+            st.caption("Copy missing resources ↓")
+            st.code(", ".join(missing), language="text")
+        else:
+            st.success("✅ No missing resources — this user has everything the role requires.")
+
+        # Extra
+        if extra:
+            with st.expander(f"⚠️ {len(extra)} extra resources (has but not in role definition)", expanded=False):
+                st.caption("May be intentional additions or leftovers — review with your admin.")
+                st.markdown("".join(
+                    f'<span class="res-pill" style="background:#fff8e1;color:#f57f17">{r}</span>'
+                    for r in extra
+                ), unsafe_allow_html=True)
+                st.code(", ".join(extra), language="text")
+
+        # Correct
+        with st.expander(f"✅ {len(correct)} correct resources", expanded=False):
+            st.markdown("".join(f'<span class="res-pill">{r}</span>' for r in correct),
+                        unsafe_allow_html=True)
+
+        # Full table
+        with st.expander("📋 Full comparison table", expanded=False):
+            rows = [{"Access Resource": r,
+                     "Status": ("✅ Correct" if r in correct
+                                else ("❌ Missing" if r in missing else "⚠️ Extra")),
+                     "In Role Definition": "✓" if r in expected else "✗",
+                     "Assigned to User":   "✓" if r in actual   else "✗"}
+                    for r in sorted(expected | actual)]
+            cdf = pd.DataFrame(rows)
+            st.dataframe(cdf, use_container_width=True, hide_index=True, height=400)
+            st.download_button(
+                "⬇️ Download comparison (CSV)",
+                data=cdf.to_csv(index=False).encode("utf-8"),
+                file_name=f"role_audit_{role_pick}.csv", mime="text/csv",
+            )
 
 # ─────────────────────────────────────────────────────────────────────────────
 # TOOLS TAB
@@ -5308,23 +5301,18 @@ def render_role_auditor():
 def render_tools():
     tool = st.radio(
         "Choose a tool",
-        ["🔗 URL Checker", "🧩 Role Builder", "⚖️ Compare Resources",
-         "🔐 Permission Audit", "🔎 Role Auditor"],
+        ["🔗 URL Checker", "⚖️ Compare Resources", "🔐 Permission & Role Audit"],
         horizontal=True,
         help=(
-            "URL Checker: any URL→resource instantly.  "
-            "Role Builder: pick activities→permission list.  "
-            "Compare: diff two resources.  "
-            "Permission Audit: what can this role do?  "
-            "Role Auditor: select a role, paste user's resources, see what's missing."
+            "URL Checker: paste any URL → get its access resource instantly, with bulk mode.  "
+            "Compare: side-by-side diff of two access resources.  "
+            "Permission & Role Audit: see what a role can access OR check what a user is missing."
         ),
     )
     st.divider()
-    if "URL"     in tool:    render_url_checker(pat_df, rest_df, sidebar_lookup)
-    elif "Builder" in tool:  render_role_builder(pat_df)
-    elif "Compare" in tool:  render_compare(pat_df)
-    elif "Audit" in tool and "Role" in tool: render_role_auditor()
-    else:                    render_permission_audit(pat_df, side_df, soap_df, rest_df, imp_df, exp_df)
+    if "URL"     in tool:  render_url_checker(pat_df, rest_df, sidebar_lookup)
+    elif "Compare" in tool: render_compare(pat_df)
+    else:                   render_audit_tool(pat_df, side_df, soap_df, rest_df, imp_df, exp_df)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # APIS & JOBS TAB
