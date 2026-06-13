@@ -26,31 +26,45 @@ from bs4 import BeautifulSoup
 st.set_page_config(page_title="Uniware Access Auditor", page_icon="🛡️", layout="wide")
 
 def _find(patterns):
-    """Find a file by trying multiple glob patterns across likely directories."""
+    """Find a file searching multiple directories and name variants (handles + vs _ in filenames)."""
     import os
-    # Directories to search: current dir, script dir, repo root
     base_dirs = [
-        "",                          # relative to cwd
-        os.path.dirname(os.path.abspath(__file__)) + "/",  # same dir as app.py
-        "/mount/src/access-resource/",  # Streamlit Cloud repo root (common)
-        "/mount/src/",               # Streamlit Cloud src root
+        "",
+        os.path.dirname(os.path.abspath(__file__)) + "/",
+        "/mount/src/access-resource/",
+        "/mount/src/",
     ]
     for base in base_dirs:
         for p in patterns:
+            # Try original pattern
             hits = glob.glob(base + p)
             if hits: return hits[0]
-    # Return pattern as-is (will show "not found" error gracefully)
+            # Try with + instead of _ (GitHub sometimes keeps + from URL-encoded names)
+            hits = glob.glob(base + p.replace("_", "+"))
+            if hits: return hits[0]
+            # Try with spaces
+            hits = glob.glob(base + p.replace("_", " "))
+            if hits: return hits[0]
     return patterns[0]
 
-TXT_FILE  = _find(["access_patterns*.txt", "access_pattern*.txt"])
+TXT_FILE  = _find(["access_patterns*.txt", "access_pattern*.txt",
+                   "access_patterns+(2).txt", "access_patterns (2).txt"])
 DOC_SIDE  = _find(["Access_resource_associated_with_uniware_layout_left_side_bar.doc",
                    "Access+resource+associated+with+uniware+layout+left+side+bar.doc",
-                   "*sidebar*.doc", "*left_side*.doc"])
-DOC_SOAP  = _find(["Soap_Api_access_resources.doc", "Soap_api*.doc", "*soap*.doc"])
-DOC_REST  = _find(["Rest_Api_access_resources.doc", "Rest_api*.doc", "*rest*api*.doc"])
-DOC_IMP   = _find(["Import_Job_Type_Access_Resources.doc", "*Import_Job*.doc", "*import*job*.doc"])
+                   "*sidebar*.doc", "*left_side*.doc", "*uniware*layout*.doc"])
+DOC_SOAP  = _find(["Soap_Api_access_resources.doc",
+                   "Soap+Api+access+resources.doc",
+                   "*[Ss]oap*.doc"])
+DOC_REST  = _find(["Rest_Api_access_resources.doc",
+                   "Rest+Api+access+resources.doc",
+                   "*[Rr]est*[Aa]pi*.doc"])
+DOC_IMP   = _find(["Import_Job_Type_Access_Resources.doc",
+                   "Import+Job+Type+Access+Resources.doc",
+                   "*[Ii]mport*[Jj]ob*.doc"])
 DOC_EXP   = _find(["Access_Resource_associated_with_Export_Job_Type_Export_Datatable_.doc",
-                   "*Export*Datatable*.doc", "*export*job*.doc"])
+                   "Access+Resource+associated+with+Export+Job+Type+Export+Datatable+.doc",
+                   "*[Ee]xport*[Dd]atatable*.doc",
+                   "*[Ee]xport*[Jj]ob*.doc"])
 
 # ─────────────────────────────────────────────────────────────────────────────
 # LOAD ROLES FROM EXCEL  (110% accuracy — sourced directly from live dump)
@@ -4776,15 +4790,25 @@ def render_tab(df, pool, quick_terms, sk, flat_cols, group_cols,
     render_detail(result,sk)
 
     with st.expander("📊 Summary — one row per resource",expanded=False):
-        gdf=(result.groupby(["Access Resource","Type"],as_index=False)
-             .agg(Count=("Access Resource","count"),
-                  Sample=("Activity",lambda s:"  ·  ".join(sorted(set(map(str,s)))[:4])))
-             .sort_values("Count",ascending=False).reset_index(drop=True))
+        # Pick first available label column — different tabs have different columns
+        _label_col = next(
+            (c for c in ["Activity","API Name","Import Job Type","Display Name","Name"]
+             if c in result.columns), None
+        )
+        if _label_col:
+            gdf = (result.groupby(["Access Resource","Type"],as_index=False)
+                   .agg(Count=("Access Resource","count"),
+                        Sample=(_label_col, lambda s: "  ·  ".join(sorted(set(map(str,s)))[:4])))
+                   .sort_values("Count",ascending=False).reset_index(drop=True))
+        else:
+            gdf = (result.groupby(["Access Resource","Type"],as_index=False)
+                   .agg(Count=("Access Resource","count"))
+                   .sort_values("Count",ascending=False).reset_index(drop=True))
         st.dataframe(gdf,use_container_width=True,hide_index=True,
                      column_config={"Access Resource":st.column_config.TextColumn(width=240),
                                     "Type":st.column_config.TextColumn(width=80),
                                     "Count":st.column_config.NumberColumn(width=80),
-                                    "Sample":st.column_config.TextColumn("Sample Activities/Names",width=420)})
+                                    "Sample":st.column_config.TextColumn("Sample Names",width=420)})
         st.download_button("⬇️ Download summary",gdf.to_csv(index=False).encode("utf-8"),
                            f"summary_{src_label}.csv","text/csv")
 
