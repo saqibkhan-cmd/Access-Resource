@@ -4061,144 +4061,6 @@ LEVEL_MAP = {"FACILITY":"Facility","TENANT":"Tenant","BOTH":"Tenant (Both)",
 
 # ─────────────────────────────────────────────────────────────────────────────
 # PREDEFINED ROLES  (built from all 6 data sources — 110% accuracy)
-# ─────────────────────────────────────────────────────────────────────────────
-PREDEFINED_ROLES: dict[str, list[str]] = {
-    "Picker": [
-        "PICKER", "PICKLIST_VIEW", "PICKLIST_CREATE", "PICKLIST_RECEIVE",
-        "LOOKUP_SALE_ORDER", "LOOKUP", "MINIMAL",
-    ],
-    "Packer / Shipper": [
-        "PICKLIST_VIEW", "PICKLIST_RECEIVE", "SHIPPER", "SHIPPING",
-        "CUSTOMER_INVOICE", "MANIFEST", "LOOKUP_SALE_ORDER",
-        "LOOKUP_SHIPPING_PACKAGE", "LOOKUP", "MINIMAL",
-    ],
-    "Inbound Executive (GRN)": [
-        "INFLOW_GRN_CREATE", "INFLOW_GRN_SEARCH", "INFLOW_GRN_QC",
-        "INFLOW_GRN_TR_EDIT", "INFLOW_GRN_NTR_EDIT",
-        "INFLOW_INVENTORY_ADJUST", "INFLOW_GRN_CREATE_LABELS",
-        "INFLOW_ITEM_LABEL", "LOOKUP", "MINIMAL",
-    ],
-    "Putaway Executive": [
-        "PUTAWAY_CREATE", "PUTAWAY_COMPLETE", "PUTAWAY_TRANSFER",
-        "PUTAWAY_VIEW", "INFLOW_ITEM_LABEL", "LOOKUP", "MINIMAL",
-    ],
-    "Shipping / Dispatch Executive": [
-        "SHIPPING", "SHIPPER", "PICKLIST_VIEW", "PICKLIST_RECEIVE",
-        "CUSTOMER_INVOICE", "MANIFEST", "EXPORT", "EXPORT_SHIPPING_MANIFEST",
-        "EXPORT_SHIPPING_PACKAGE", "LOOKUP_SHIPPING_PACKAGE", "LOOKUP", "MINIMAL",
-    ],
-    "Returns Executive": [
-        "RETURNS", "REVERSE_PICKUP_CREATE", "REVERSE_PICKUP_EDIT",
-        "REVERSE_PICKUP_PENDING", "REVERSE_PICKUP_AUTO",
-        "SALE_ORDER_RETURN", "RETURNS_MANIFEST", "LOOKUP", "MINIMAL",
-    ],
-    "Procurement Manager": [
-        "PROCUREMENT", "PROCUREMENT_VIEW", "PROCUREMENT_REORDER",
-        "PO_APPROVE", "PO_CLOSE", "SEARCH_ACTIVE_PO",
-        "INFLOW_GRN_CREATE", "INFLOW_GRN_SEARCH",
-        "VENDOR_API", "VENDOR", "VENDOR_VIEW",
-        "LOOKUP", "EXPORT", "EXPORT_PURCHASE_ORDERS", "MINIMAL",
-    ],
-    "Catalog Manager": [
-        "ADMIN_CATALOG", "ADMIN_CATALOG_VIEW",
-        "IMPORT_ITEM_MASTER", "IMPORT_CATEGORY", "IMPORT_VENDOR_ITEM_MASTER",
-        "IMPORT_CHANNEL_ITEM_TYPE", "EXPORT_ITEM_MASTER", "EXPORT_CATEGORY",
-        "LOOKUP", "EXPORT", "IMPORT", "MINIMAL",
-    ],
-    "Warehouse Manager": [
-        "PICKLIST_CREATE", "PICKLIST_EDIT", "PICKLIST_VIEW", "PICKLIST_RECEIVE",
-        "PICKLIST_MANUAL_CREATE", "PICK_BUCKET_ADMIN",
-        "INFLOW_GRN_CREATE", "INFLOW_GRN_SEARCH", "INFLOW_GRN_QC",
-        "INFLOW_GRN_TR_EDIT", "INFLOW_GRN_NTR_EDIT",
-        "INFLOW_INVENTORY_ADJUST", "INFLOW_GRN_CREATE_LABELS", "INFLOW_ITEM_LABEL",
-        "SHIPPING", "SHIPPER", "PUTAWAY_CREATE", "PUTAWAY_COMPLETE", "PUTAWAY_TRANSFER",
-        "PUTAWAY_VIEW", "RETURNS", "REVERSE_PICKUP_CREATE", "REVERSE_PICKUP_EDIT",
-        "MATERIAL_MANAGEMENT", "CYCLE_COUNT_VIEW", "COUNT_SHELF",
-        "MANIFEST", "CUSTOMER_INVOICE", "LOOKUP_INVENTORY",
-        "LOOKUP_SALE_ORDER", "LOOKUP_SHIPPING_PACKAGE",
-        "LOOKUP", "EXPORT", "ALERT", "MINIMAL",
-    ],
-    "Channel Manager": [
-        "CHANNELS_VIEW", "CHANNELS_ADMIN", "CHANNEL_ORDER",
-        "ADMIN_CATALOG_VIEW", "PRICE_VIEW", "PRICE_UPDATE",
-        "IMPORT_CHANNEL_ITEM_TYPE", "IMPORT_CHANNEL_ITEM_TYPE_NO_PRODUCT_MANAGEMENT",
-        "EXPORT_SALE_ORDERS", "CHANNEL_INVENTORY_SNAPSHOP_STANDARD",
-        "CHANNEL_RECONCILIATION_VIEW", "CHANNEL_RECONCILIATION_VIEW",
-        "RECOMMENDATION", "LOOKUP", "EXPORT", "MINIMAL",
-    ],
-    "Cycle Count Executive": [
-        "CYCLE_COUNT_VIEW", "COUNT_SHELF", "EXPORT_INVENTORY",
-        "LOOKUP_INVENTORY", "LOOKUP", "MINIMAL",
-    ],
-    "Gatepass Executive": [
-        "MATERIAL_MANAGEMENT", "VIEW_GATEPASSORDER",
-        "EXPORT_GATEPASS", "EXPORT_GATEPASS_BY_SKU",
-        "INBOUND_GATEPASS", "EXPORT_INBOUND_GATEPASS",
-        "LOOKUP", "MINIMAL",
-    ],
-    "Vendor Executive": [
-        "VENDOR", "VENDOR_API", "VENDOR_CREATE", "VENDOR_CATALOG",
-        "VENDOR_INVOICE", "VENDOR_VIEW",
-        "IMPORT_VENDORS", "IMPORT_VENDOR_ITEM_MASTER",
-        "EXPORT_VENDOR", "EXPORT_VENDOR_ITEM_MASTER",
-        "LOOKUP", "MINIMAL",
-    ],
-    "Sale Order Manager": [
-        "LOOKUP_SALE_ORDER", "LOOKUP_SALE_ORDER_ITEM",
-        "SALE_ORDER_CANCEL_ITEM", "SALE_ORDER_HOLD_UNHOLD",
-        "SALE_ORDER_ADDRESS_EDIT", "SALE_ORDER_METADATA_EDIT",
-        "SALE_ORDER_ALTERNATE_ACCEPT", "SALE_ORDER_STATUS_UPDATE",
-        "VERIFY_PENDING_ORDERS", "IMPORT_SALE_ORDERS",
-        "EXPORT_SALE_ORDERS", "ORDERS",
-        "LOOKUP", "EXPORT", "MINIMAL",
-    ],
-    "Finance / Billing Executive": [
-        "CUSTOMER_INVOICE", "EXPORT_INVOICE", "EXPORT_INVOICED_TRANSACTIONS",
-        "PAYMENT_RECONCILIATION", "BILLING_PARTY_VIEW",
-        "CHANNEL_RECONCILIATION_VIEW", "LOOKUP_INVOICE",
-        "LOOKUP", "EXPORT", "MINIMAL",
-    ],
-    "Inventory Analyst": [
-        "LOOKUP_INVENTORY", "LOOKUP_INVENTORY_LEDGER", "LOOKUP_ITEM_TYPE",
-        "EXPORT_INVENTORY", "EXPORT_INVENTORY_AGING", "EXPORT_INVENTORY_WORTH",
-        "IMPORT_INVENTORY_ADJUSTMENT", "CYCLE_COUNT_VIEW",
-        "LOOKUP", "EXPORT", "MINIMAL",
-    ],
-    "Admin / Super User": [
-        "ADMIN_USER", "ADMIN_CATALOG", "ADMIN_CATALOG_VIEW",
-        "ADMIN_WAREHOUSE", "ADMIN_SHIPPING_PROVIDER", "ADMIN_LAYOUT",
-        "ADMIN_PICKING", "ADMIN_PRINT", "ADMIN_TRANSITION", "ADMIN_ALERT",
-        "ADMIN_EMAIL_TEMPLATE", "ADMIN_TEMPLATE",
-        "CREATE_TENANT", "IMPORT_FACILITY",
-        "LOOKUP", "EXPORT", "IMPORT", "MINIMAL",
-    ],
-    "API Integration User (SOAP/REST)": [
-        "IMPORT_SALE_ORDERS", "EXPORT_SALE_ORDERS",
-        "SALE_ORDER_CANCEL_ITEM", "SALE_ORDER_HOLD_UNHOLD",
-        "LOOKUP_SALE_ORDER", "LOOKUP_INVENTORY",
-        "INFLOW_GRN_CREATE", "INFLOW_GRN_SEARCH",
-        "PROCUREMENT", "SHIPPING", "CUSTOMER_INVOICE",
-        "MATERIAL_MANAGEMENT", "REVERSE_PICKUP_CREATE",
-        "VENDOR_API", "ADMIN_CATALOG",
-        "UPDATE_TRACKING_STATUS", "MINIMAL",
-    ],
-    "Import/Export Operations User": [
-        "IMPORT_ITEM_MASTER", "IMPORT_CATEGORY", "IMPORT_SALE_ORDERS",
-        "IMPORT_VENDORS", "IMPORT_PURCHASE_ORDERS", "IMPORT_INVENTORY_ADJUSTMENT",
-        "IMPORT_SHIPPING_PROVIDER_LOCATION", "IMPORT_CUSTOMER",
-        "IMPORT_CHANNEL_ITEM_TYPE", "IMPORT_FACILITY_ALLOCATION_RULES",
-        "EXPORT_SALE_ORDERS", "EXPORT_INVENTORY", "EXPORT_PURCHASE_ORDERS",
-        "EXPORT_SHIPPING_MANIFEST", "EXPORT_SHIPPING_PACKAGE",
-        "EXPORT_GRN", "EXPORT_ITEM_MASTER",
-        "EXPORT", "IMPORT", "MINIMAL",
-    ],
-    "ASN / Advance Shipping Executive": [
-        "ASN_CREATE", "VENDOR", "VENDOR_API",
-        "INFLOW_GRN_CREATE", "INFLOW_GRN_SEARCH",
-        "EXPORT_ADVANCE_SHIPPING_NOTICE",
-        "LOOKUP", "MINIMAL",
-    ],
-}
 
 # ─────────────────────────────────────────────────────────────────────────────
 # HELPERS
@@ -5269,9 +5131,13 @@ def render_audit_tool(pat_df,side_df,soap_df,rest_df,imp_df,exp_df):
 
         if "Predefined" in input_mode:
             role_pick = st.selectbox(
-                "Select role", list(PREDEFINED_ROLES.keys()), key="audit_role_a",
+                "Select role",
+                ["— select a role —"] + list(PREDEFINED_ROLES.keys()),
+                key="audit_role_a",
                 help="Exact resources from live Uniware dump — 100% accurate.",
             )
+            if role_pick == "— select a role —":
+                return
             resources = PREDEFINED_ROLES[role_pick]
             pills = "".join(f'<span class="res-pill">{r}</span>' for r in resources)
             st.markdown(
@@ -5312,9 +5178,13 @@ def render_audit_tool(pat_df,side_df,soap_df,rest_df,imp_df,exp_df):
 
         role_pick = st.selectbox(
             "Expected role (what the user should have)",
-            list(PREDEFINED_ROLES.keys()), key="audit_role_b",
+            ["— select a role —"] + list(PREDEFINED_ROLES.keys()),
+            key="audit_role_b",
             help="Loaded from live Uniware dump — exact expected resource set for this role.",
         )
+        if role_pick == "— select a role —":
+            st.info("Select the expected role above to continue.")
+            return
         expected = set(PREDEFINED_ROLES[role_pick])
 
         # Show expected resources collapsed
