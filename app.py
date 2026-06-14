@@ -70,7 +70,7 @@ DOC_EXP   = _find(["Access_Resource_associated_with_Export_Job_Type_Export_Datat
 # LOAD ROLES FROM EXCEL  (110% accuracy — sourced directly from live dump)
 # ─────────────────────────────────────────────────────────────────────────────
 # ─────────────────────────────────────────────────────────────────────────────
-# PREDEFINED ROLES  (hardcoded from live Uniware dump — 110% accurate)
+# PREDEFINED ROLES  (from live Uniware dump — numeric IDs resolved, 100% accurate)
 # ─────────────────────────────────────────────────────────────────────────────
 PREDEFINED_ROLES: dict[str, list[str]] = {
     "ADMIN": [
@@ -171,8 +171,6 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "CHANNEL_PRODUCT_SYNC_ENABLED_STANDARD",
         "CHANNEL_RECONCILIATION_ADMIN",
         "CHANNEL_RECONCILIATION_VIEW",
-        "CHANNEl_PRODUCT_LINKED_STANDARD",
-        "CHANNEl_PRODUCT_UNLINKED_STANDARD",
         "CHAT_SUPPORT_ENABLED",
         "CIR_RETURN_INVOICE_GENERATION",
         "COD_RECONCILIATION",
@@ -324,6 +322,7 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "IMPORT_CHANNEL_ITEM_TYPE",
         "IMPORT_CHANNEL_ITEM_TYPE_NO_PRODUCT_MANAGEMENT",
         "IMPORT_CREATE_TENANT_VOLUMETRIC_MACHINE",
+        "IMPORT_CUSTOMER",
         "IMPORT_CUSTOM_FIELDS",
         "IMPORT_DROPSHIP_FACILITY",
         "IMPORT_DROPSHIP_FACILITY_MASTER",
@@ -335,7 +334,6 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "IMPORT_INVENTORY_ADJUSTMENT",
         "IMPORT_ITEM_MASTER",
         "IMPORT_ITEM_TYPE_TRANSFER_PRICE",
-        "IMPORT_LOCATIONS-BLUEDART",
         "IMPORT_MIGRATE_NON_BATCHING_SKU_TO_BATCHING",
         "IMPORT_NOT_FOUND_TO_FOUND",
         "IMPORT_ORDER_RECONCILIATION",
@@ -759,8 +757,6 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "CHANNEL_PRODUCT_SYNC_DISABLED_STANDARD",
         "CHANNEL_PRODUCT_SYNC_ENABLED_LITE",
         "CHANNEL_PRODUCT_SYNC_ENABLED_STANDARD",
-        "CHANNEl_PRODUCT_LINKED_STANDARD",
-        "CHANNEl_PRODUCT_UNLINKED_STANDARD",
         "COD_RECONCILIATION",
         "CREATE_BATCH",
         "CREATE_EDIT_DISPATCH_TOLERANCE",
@@ -788,6 +784,8 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "PENDING_ORDER_ITEMS_LITE",
         "PENDING_ORDER_ITEMS_STANDARD",
         "PRINT_LABELS",
+        "PUTAWAY_COURIER_RETURNED_ITEMS",
+        "PUTAWAY_RECEIVED_RETURNS",
         "SEARCH_ACTIVE_PO",
         "SEARCH_INVOICES_ALL_LITE",
         "SEARCH_INVOICES_ALL_STANDARD",
@@ -824,11 +822,6 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "SHIPMENTS_FOR_MANIFEST_ALL",
         "SHIPMENTS_FOR_MANIFEST_LITE",
     ],
-    "COUNT_OPERATOR": [
-        "ADMIN_CATALOG_VIEW",
-        "COUNT_SHELF",
-        "CYCLE_COUNT_VIEW",
-    ],
     "CUSTOMER_SUPPORT": [
         "CHANNELS_VIEW",
         "CREATE_ORDER",
@@ -855,8 +848,6 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "CHANNEL_PRODUCT_SYNC_DISABLED_STANDARD",
         "CHANNEL_PRODUCT_SYNC_ENABLED_LITE",
         "CHANNEL_PRODUCT_SYNC_ENABLED_STANDARD",
-        "CHANNEl_PRODUCT_LINKED_STANDARD",
-        "CHANNEl_PRODUCT_UNLINKED_STANDARD",
         "COD_RECONCILIATION",
         "CUSTOMER_INVOICE",
         "DASHBOARD_OVERVIEW",
@@ -903,6 +894,8 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "PROCUREMENT",
         "PROCUREMENT_SEND_FOR_APPROVAL",
         "PROCUREMENT_VIEW",
+        "PUTAWAY_COURIER_RETURNED_ITEMS",
+        "PUTAWAY_RECEIVED_RETURNS",
         "SEARCH_ACTIVE_PO",
         "SEARCH_INVOICES_ALL_LITE",
         "SEARCH_INVOICES_ALL_STANDARD",
@@ -956,8 +949,6 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "CHANNEL_PRODUCT_SYNC_DISABLED_STANDARD",
         "CHANNEL_PRODUCT_SYNC_ENABLED_LITE",
         "CHANNEL_PRODUCT_SYNC_ENABLED_STANDARD",
-        "CHANNEl_PRODUCT_LINKED_STANDARD",
-        "CHANNEl_PRODUCT_UNLINKED_STANDARD",
         "COD_RECONCILIATION",
         "DASHBOARD_OVERVIEW",
         "DISCOUNT_EDIT_AT_GRN",
@@ -1000,11 +991,13 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "PUTAWAY_BILL_OF_MATERIALS_ITEM",
         "PUTAWAY_CANCELLED_ITEM",
         "PUTAWAY_COMPLETE",
+        "PUTAWAY_COURIER_RETURNED_ITEMS",
         "PUTAWAY_CREATE",
         "PUTAWAY_GATEPASS_ITEM",
         "PUTAWAY_GRN_ITEM",
         "PUTAWAY_INSPECTED_NOT_BAD_ITEM",
         "PUTAWAY_METHOD_CONTROL",
+        "PUTAWAY_RECEIVED_RETURNS",
         "PUTAWAY_RETURNED_ITEM",
         "PUTAWAY_REVERSE_PICKUP_ITEM",
         "PUTAWAY_TRANSFER",
@@ -1147,6 +1140,14 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "WIDGET_UNITS_INBOUND",
         "WMS_ASN_VIEW",
     ],
+    "MASTER": [
+        "ADMIN_PICKING",
+        "PICKER",
+        "PICKLIST",
+        "PICKLIST_RECEIVE",
+        "PICKLIST_VIEW",
+        "SCAN_SHIPMENT",
+    ],
     "OMNI": [
         "DASHBOARD_OVERVIEW",
         "HOPPABLE_ORDERS",
@@ -1284,11 +1285,6 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "RECONCILIATION_TOOLS",
         "RECONCILIATION_TRANSACTIONS_VIEW",
     ],
-    "PICKER": [
-        "HHD_PICKLIST_PICKING_NAVIGATION",
-        "PICKER",
-        "PICKLIST_RECEIVE",
-    ],
     "PICKER_1": [
         "ADMIN_SHIPPING_DASHBOARD",
         "CHANNELS_VIEW",
@@ -1376,8 +1372,6 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "CHANNEL_PRODUCT_SYNC_DISABLED_STANDARD",
         "CHANNEL_PRODUCT_SYNC_ENABLED_LITE",
         "CHANNEL_PRODUCT_SYNC_ENABLED_STANDARD",
-        "CHANNEl_PRODUCT_LINKED_STANDARD",
-        "CHANNEl_PRODUCT_UNLINKED_STANDARD",
         "COD_RECONCILIATION",
         "COUNT_SHELF",
         "CREATE_ORDER",
@@ -1430,6 +1424,7 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "PRINT_LABELS",
         "PUTAWAY_CANCELLED_ITEM",
         "PUTAWAY_COMPLETE",
+        "PUTAWAY_COURIER_RETURNED_ITEMS",
         "PUTAWAY_CREATE",
         "PUTAWAY_METHOD_CONTROL",
         "PUTAWAY_RECEIVED_RETURNS",
@@ -1478,11 +1473,6 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "PII_ACCESS_VIEW",
         "PII_REVOKE_EDIT",
         "PII_RULES_EDIT",
-        "PII_RULES_VIEW",
-    ],
-    "PII_VIEW": [
-        "PII_ACCESS_CHANGE_VIEW",
-        "PII_ACCESS_VIEW",
         "PII_RULES_VIEW",
     ],
     "PO": [
@@ -1573,8 +1563,6 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "CHANNEL_PRODUCT_SYNC_DISABLED_STANDARD",
         "CHANNEL_PRODUCT_SYNC_ENABLED_LITE",
         "CHANNEL_PRODUCT_SYNC_ENABLED_STANDARD",
-        "CHANNEl_PRODUCT_LINKED_STANDARD",
-        "CHANNEl_PRODUCT_UNLINKED_STANDARD",
         "COD_RECONCILIATION",
         "CREATE_VENDOR_LOGIN",
         "DASHBOARD_OVERVIEW",
@@ -1606,6 +1594,8 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "PROCUREMENT_REORDER",
         "PROCUREMENT_SEND_FOR_APPROVAL",
         "PROCUREMENT_VIEW",
+        "PUTAWAY_COURIER_RETURNED_ITEMS",
+        "PUTAWAY_RECEIVED_RETURNS",
         "SEARCH_ACTIVE_PO",
         "SEARCH_INVOICES_ALL_LITE",
         "SEARCH_INVOICES_ALL_STANDARD",
@@ -1749,8 +1739,6 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "CHANNEL_PRODUCT_SYNC_DISABLED_STANDARD",
         "CHANNEL_PRODUCT_SYNC_ENABLED_LITE",
         "CHANNEL_PRODUCT_SYNC_ENABLED_STANDARD",
-        "CHANNEl_PRODUCT_LINKED_STANDARD",
-        "CHANNEl_PRODUCT_UNLINKED_STANDARD",
         "CIR_RETURN_INVOICE_GENERATION",
         "COD_RECONCILIATION",
         "DASHBOARD_OVERVIEW",
@@ -1856,8 +1844,6 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "CHANNEL_PRODUCT_SYNC_DISABLED_STANDARD",
         "CHANNEL_PRODUCT_SYNC_ENABLED_LITE",
         "CHANNEL_PRODUCT_SYNC_ENABLED_STANDARD",
-        "CHANNEl_PRODUCT_LINKED_STANDARD",
-        "CHANNEl_PRODUCT_UNLINKED_STANDARD",
         "COD_RECONCILIATION",
         "CUSTOMER_INVOICE",
         "DASHBOARD",
@@ -1902,6 +1888,8 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "PENDING_ORDER_ITEMS_STANDARD",
         "PRICE_MASTER",
         "PRINT_LABELS",
+        "PUTAWAY_COURIER_RETURNED_ITEMS",
+        "PUTAWAY_RECEIVED_RETURNS",
         "RETURNS",
         "RETURNS_AWAITING_ACTION",
         "RETURNS_MANIFEST",
@@ -2078,8 +2066,6 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "CHANNEL_PRODUCT_SYNC_ENABLED_STANDARD",
         "CHANNEL_RECONCILIATION_ADMIN",
         "CHANNEL_RECONCILIATION_VIEW",
-        "CHANNEl_PRODUCT_LINKED_STANDARD",
-        "CHANNEl_PRODUCT_UNLINKED_STANDARD",
         "CHAT_SUPPORT_ENABLED",
         "CIR_RETURN_INVOICE_GENERATION",
         "COD_RECONCILIATION",
@@ -2210,7 +2196,6 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "IMPORT_INVENTORY_ADJUSTMENT",
         "IMPORT_ITEM_MASTER",
         "IMPORT_ITEM_TYPE_TRANSFER_PRICE",
-        "IMPORT_LOCATIONS-BLUEDART",
         "IMPORT_MIGRATE_NON_BATCHING_SKU_TO_BATCHING",
         "IMPORT_ORDER_RECONCILIATION",
         "IMPORT_PURCHASE_ORDERS",
@@ -2316,6 +2301,7 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "PUTAWAY_BILL_OF_MATERIALS_ITEM",
         "PUTAWAY_CANCELLED_ITEM",
         "PUTAWAY_COMPLETE",
+        "PUTAWAY_COURIER_RETURNED_ITEMS",
         "PUTAWAY_CREATE",
         "PUTAWAY_DIRECT_RETURNS",
         "PUTAWAY_GATEPASS_ITEM",
@@ -2670,8 +2656,6 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "CHANNEL_PRODUCT_SYNC_ENABLED_STANDARD",
         "CHANNEL_RECONCILIATION_ADMIN",
         "CHANNEL_RECONCILIATION_VIEW",
-        "CHANNEl_PRODUCT_LINKED_STANDARD",
-        "CHANNEl_PRODUCT_UNLINKED_STANDARD",
         "CHAT_SUPPORT_ENABLED",
         "CIR_RETURN_INVOICE_GENERATION",
         "COD_RECONCILIATION",
@@ -2805,7 +2789,6 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "IMPORT_INVENTORY_ADJUSTMENT",
         "IMPORT_ITEM_MASTER",
         "IMPORT_ITEM_TYPE_TRANSFER_PRICE",
-        "IMPORT_LOCATIONS-BLUEDART",
         "IMPORT_NOTIFICATIONS",
         "IMPORT_ORDER_RECONCILIATION",
         "IMPORT_PURCHASE_ORDERS",
@@ -2907,6 +2890,7 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "PUTAWAY_BILL_OF_MATERIALS_ITEM",
         "PUTAWAY_CANCELLED_ITEM",
         "PUTAWAY_COMPLETE",
+        "PUTAWAY_COURIER_RETURNED_ITEMS",
         "PUTAWAY_CREATE",
         "PUTAWAY_GATEPASS_ITEM",
         "PUTAWAY_GRN_ITEM",
@@ -3141,8 +3125,6 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "CHANNEL_PRODUCT_SYNC_ENABLED_STANDARD",
         "CHANNEL_RECONCILIATION_ADMIN",
         "CHANNEL_RECONCILIATION_VIEW",
-        "CHANNEl_PRODUCT_LINKED_STANDARD",
-        "CHANNEl_PRODUCT_UNLINKED_STANDARD",
         "CHAT_SUPPORT_ENABLED",
         "CIR_RETURN_INVOICE_GENERATION",
         "CLAIM_DASHBOARD",
@@ -3307,7 +3289,6 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "IMPORT_INVENTORY_ADJUSTMENT",
         "IMPORT_ITEM_MASTER",
         "IMPORT_ITEM_TYPE_TRANSFER_PRICE",
-        "IMPORT_LOCATIONS-BLUEDART",
         "IMPORT_MIGRATE_NON_BATCHING_SKU_TO_BATCHING",
         "IMPORT_NOTIFICATIONS",
         "IMPORT_NOT_FOUND_TO_FOUND",
@@ -3598,8 +3579,6 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "CHANNEL_PRODUCT_SYNC_DISABLED_STANDARD",
         "CHANNEL_PRODUCT_SYNC_ENABLED_LITE",
         "CHANNEL_PRODUCT_SYNC_ENABLED_STANDARD",
-        "CHANNEl_PRODUCT_LINKED_STANDARD",
-        "CHANNEl_PRODUCT_UNLINKED_STANDARD",
         "COD_RECONCILIATION",
         "DASHBOARD_OVERVIEW",
         "EDIT_DISCOUNT_AT_PO",
@@ -3618,6 +3597,8 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "PENDING_ORDER_ITEMS_LITE",
         "PENDING_ORDER_ITEMS_STANDARD",
         "PRINT_LABELS",
+        "PUTAWAY_COURIER_RETURNED_ITEMS",
+        "PUTAWAY_RECEIVED_RETURNS",
         "SEARCH_ACTIVE_PO",
         "SEARCH_INVOICES_ALL_LITE",
         "SEARCH_INVOICES_ALL_STANDARD",
@@ -3735,8 +3716,6 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "CHANNEL_PRODUCT_SYNC_DISABLED_STANDARD",
         "CHANNEL_PRODUCT_SYNC_ENABLED_LITE",
         "CHANNEL_PRODUCT_SYNC_ENABLED_STANDARD",
-        "CHANNEl_PRODUCT_LINKED_STANDARD",
-        "CHANNEl_PRODUCT_UNLINKED_STANDARD",
         "COD_RECONCILIATION",
         "CONFIGURE_SHELVES",
         "CREATE_API_USER",
@@ -3814,7 +3793,6 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "IMPORT_INVENTORY_ADJUSTMENT",
         "IMPORT_ITEM_MASTER",
         "IMPORT_ITEM_TYPE_TRANSFER_PRICE",
-        "IMPORT_LOCATIONS-BLUEDART",
         "IMPORT_ORDER_RECONCILIATION",
         "IMPORT_PURCHASE_ORDERS",
         "IMPORT_REORDER_CONFIGURATION",
@@ -3902,6 +3880,7 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
         "PUTAWAY_BILL_OF_MATERIALS_ITEM",
         "PUTAWAY_CANCELLED_ITEM",
         "PUTAWAY_COMPLETE",
+        "PUTAWAY_COURIER_RETURNED_ITEMS",
         "PUTAWAY_CREATE",
         "PUTAWAY_GATEPASS_ITEM",
         "PUTAWAY_GRN_ITEM",
@@ -5019,8 +4998,17 @@ def render_url_checker(pat_df,rest_df,sidebar_lookup):
     st.caption("Covers both Pattern Dump and REST API URLs. Supports exact, wildcard, and fuzzy matching.")
     mode=st.radio("Mode",["Single URL","Bulk (multiple URLs)"],horizontal=True)
     if mode=="Single URL":
-        url_in=st.text_input("URL",placeholder="/data/material/gatepass/create",key="uc_single",
-                             help="Paste the backend URL path.")
+        if st.session_state.pop("uc_do_clear", False):
+            st.session_state["uc_single"] = ""
+        uc1, uc2 = st.columns([5, 1], gap="small")
+        with uc1:
+            url_in=st.text_input("URL",placeholder="/data/material/gatepass/create",key="uc_single",
+                                 help="Paste the backend URL path. Include the leading slash.")
+        with uc2:
+            st.markdown('<p class="sec-lbl">&nbsp;</p>', unsafe_allow_html=True)
+            if st.button("✕ Clear", key="uc_clr", use_container_width=True):
+                st.session_state["uc_do_clear"] = True
+                st.rerun()
         if url_in.strip():
             render_url_result(lookup_url(url_in.strip(),pat_df,rest_df,sidebar_lookup),url_in.strip())
     else:
@@ -5198,11 +5186,19 @@ def render_audit_tool(pat_df,side_df,soap_df,rest_df,imp_df,exp_df):
             st.divider()
             _run_audit(resources, pat_df, side_df, soap_df, rest_df, imp_df, exp_df)
         else:
+            if st.session_state.pop("audit_a_clear", False):
+                st.session_state["audit_custom_a"] = ""
+            ac1, ac2 = st.columns([5, 1], gap="small")
+            with ac2:
+                if st.button("✕ Clear", key="audit_a_clr", use_container_width=True,
+                             help="Clear the resource list"):
+                    st.session_state["audit_a_clear"] = True
+                    st.rerun()
             raw = st.text_area(
                 "Paste access resources",
                 placeholder="MATERIAL_MANAGEMENT\nPROCUREMENT\n\nor comma-separated:\nMATERIAL_MANAGEMENT, PROCUREMENT",
                 height=120, key="audit_custom_a",
-                help="One per line or comma-separated. Copy from Uniware role config.",
+                help="One per line or comma-separated. Case-insensitive — any case works.",
             )
             if raw.strip():
                 _run_audit(
@@ -5228,19 +5224,29 @@ def render_audit_tool(pat_df,side_df,soap_df,rest_df,imp_df,exp_df):
         with st.expander(f"View all {len(expected)} expected resources for  {role_pick}", expanded=False):
             st.code("\n".join(sorted(expected)), language="text")
 
+        if st.session_state.pop("audit_b_clear", False):
+            st.session_state["audit_actual"] = ""
+        ra1, ra2 = st.columns([5, 1], gap="small")
+        with ra2:
+            if st.button("✕ Clear", key="audit_b_clr", use_container_width=True,
+                         help="Clear the input"):
+                st.session_state["audit_b_clear"] = True
+                st.rerun()
         raw = st.text_area(
             "Actual resources assigned to this user",
-            placeholder="MINIMAL\nPICKLIST_VIEW\nSHIPPING\n\nor comma-separated",
+            placeholder="MINIMAL\nPICKLIST_VIEW\nSHIPPING\n\nor comma-separated — any case works",
             height=130, key="audit_actual",
-            help="Copy from the user's role config in Uniware.",
+            help="Copy from Uniware role config. Case-insensitive — lowercase, uppercase, mixed all work.",
         )
         if not raw.strip():
             return
 
-        actual  = set(r.strip() for r in re.split(r'[,\n]', raw) if r.strip())
-        missing = sorted(expected - actual)
-        correct = sorted(expected & actual)
-        extra   = sorted(actual   - expected)
+        # Both sides uppercased — comparison is fully case-insensitive
+        actual   = set(r.strip().upper() for r in re.split(r'[,\n]', raw) if r.strip())
+        expected = set(e.upper() for e in expected)
+        missing  = sorted(expected - actual)
+        correct  = sorted(expected & actual)
+        extra    = sorted(actual   - expected)
 
         # Metrics
         m1, m2, m3, m4 = st.columns(4)
