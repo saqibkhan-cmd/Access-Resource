@@ -5067,69 +5067,166 @@ def render_compare(pat_df):
 # ─────────────────────────────────────────────────────────────────────────────
 # TOOLS — PERMISSION & ROLE AUDIT  (merged)
 # ─────────────────────────────────────────────────────────────────────────────
-def _run_audit(raw_resources,pat_df,side_df,soap_df,rest_df,imp_df,exp_df):
-    all_known=(set(pat_df["Access Resource"].unique())|set(side_df["Access Resource"].unique())|
-               (set(soap_df["Access Resource"].unique()) if not soap_df.empty else set())|
-               (set(rest_df["Access Resource"].unique()) if not rest_df.empty else set())|
-               (set(imp_df["Access Resource"].unique()) if not imp_df.empty else set())|
-               (set(exp_df["Access Resource"].unique()) if not exp_df.empty else set()))
-    known_upper={x.upper():x for x in all_known}
-    valid=[r for r in raw_resources if r.upper() in known_upper]
-    invalid=[r for r in raw_resources if r.upper() not in known_upper]
-    valid_norm=[known_upper[r.upper()] for r in valid]
-    pat_a=pat_df[pat_df["Access Resource"].isin(valid_norm)]
-    side_a=side_df[side_df["Access Resource"].isin(valid_norm)]
-    soap_a=soap_df[soap_df["Access Resource"].isin(valid_norm)] if not soap_df.empty else pd.DataFrame()
-    rest_a=rest_df[rest_df["Access Resource"].isin(valid_norm)] if not rest_df.empty else pd.DataFrame()
-    imp_a=imp_df[imp_df["Access Resource"].isin(valid_norm)] if not imp_df.empty else pd.DataFrame()
-    exp_a=exp_df[exp_df["Access Resource"].isin(valid_norm)] if not exp_df.empty else pd.DataFrame()
+def _run_audit(raw_resources, pat_df, side_df, soap_df, rest_df, imp_df, exp_df):
+    """
+    Run a full audit for a list of access resource names.
+    All resources are trusted as given (they come from the live dump or user input).
+    Data files are searched for matching info — if a resource has no URLs/tabs/APIs
+    in our data files, it simply won't appear in those sub-tabs, which is correct.
+    """
+    # Clean + deduplicate input — case-insensitive
+    all_input = sorted(set(r.strip().upper() for r in raw_resources if r.strip()))
+    if not all_input:
+        st.error("No resources provided."); return
 
-    m1,m2,m3,m4=st.columns(4)
-    m1.metric("Resources",len(raw_resources))
-    m2.metric("Recognised",len(valid),help="Found in any data source.")
-    m3.metric("URLs accessible",len(pat_a)+len(rest_a),help="Pattern Dump + REST API URLs.")
-    m4.metric("Sidebar tabs",len(side_a))
-    if invalid:
-        st.markdown('<div class="warn-strip"><b>⚠️ Unrecognised resources:</b><br>'
-                    +"  ".join(f'<span class="res-pill" style="background:#fff3e0;color:#e65100">{r}</span>'
-                               for r in invalid)+'</div>',unsafe_allow_html=True)
-    if not valid_norm: st.error("No resources recognised. Check spelling."); return
+    # Build a case-insensitive lookup map from all data sources
+    all_known_raw = (
+        set(pat_df["Access Resource"].unique()) |
+        set(side_df["Access Resource"].unique()) |
+        (set(soap_df["Access Resource"].unique()) if not soap_df.empty else set()) |
+        (set(rest_df["Access Resource"].unique()) if not rest_df.empty else set()) |
+        (set(imp_df["Access Resource"].unique())  if not imp_df.empty  else set()) |
+        (set(exp_df["Access Resource"].unique())  if not exp_df.empty  else set())
+    )
+    known_upper = {x.upper(): x for x in all_known_raw}
+
+    # Normalise: if we have the resource in our files use the cased version, else keep as-is
+    normalised = [known_upper.get(r, r) for r in all_input]
+
+    # Filter each data source — no resources are dropped, we just search what we have
+    pat_a  = pat_df[pat_df["Access Resource"].str.upper().isin(all_input)]
+    side_a = side_df[side_df["Access Resource"].str.upper().isin(all_input)]
+    soap_a = soap_df[soap_df["Access Resource"].str.upper().isin(all_input)] if not soap_df.empty else pd.DataFrame()
+    rest_a = rest_df[rest_df["Access Resource"].str.upper().isin(all_input)] if not rest_df.empty else pd.DataFrame()
+    imp_a  = imp_df[imp_df["Access Resource"].str.upper().isin(all_input)]   if not imp_df.empty  else pd.DataFrame()
+    exp_a  = exp_df[exp_df["Access Resource"].str.upper().isin(all_input)]   if not exp_df.empty  else pd.DataFrame()
+
+    # Resources with no data in any source
+    with_data = (
+        set(pat_a["Access Resource"].str.upper()) |
+        set(side_a["Access Resource"].str.upper()) |
+        (set(soap_a["Access Resource"].str.upper()) if not soap_a.empty else set()) |
+        (set(rest_a["Access Resource"].str.upper()) if not rest_a.empty else set()) |
+        (set(imp_a["Access Resource"].str.upper())  if not imp_a.empty  else set()) |
+        (set(exp_a["Access Resource"].str.upper())  if not exp_a.empty  else set())
+    )
+    no_data = sorted(r for r in all_input if r not in with_data)
+
+    # ── Metrics ──────────────────────────────────────────────────────────────
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Total resources",    len(all_input),
+              help="All resources in this role / input.")
+    m2.metric("With data in files", len(with_data),
+              help="Resources found in Pattern Dump, Sidebar, SOAP, REST, Import or Export files.")
+    m3.metric("URLs accessible",    len(pat_a) + len(rest_a),
+              help="Total URL patterns across Pattern Dump + REST API.")
+    m4.metric("Sidebar tabs",       len(side_a),
+              help="Sidebar navigation items accessible with this permission set.")
+
+    # ── All resource pills ────────────────────────────────────────────────────
+    pills = "".join(f'<span class="res-pill">{r}</span>' for r in sorted(all_input))
+    st.markdown(
+        f'<div class="info-strip"><b>All {len(all_input)} resources in this role:</b>'
+        f'<br><br>{pills}</div>',
+        unsafe_allow_html=True,
+    )
+
+    # ── READ/WRITE summary ────────────────────────────────────────────────────
+    rc = int((pat_a["Type"] == "READ").sum())
+    wc = int((pat_a["Type"] == "WRITE").sum())
+    if rc or wc:
+        st.markdown(
+            f'<div class="info-strip" style="background:#f0fff4;border-color:#43a047">'
+            f'Pattern Dump: <b>{rc} READ</b> and <b>{wc} WRITE</b> URL patterns accessible.'
+            f'</div>', unsafe_allow_html=True,
+        )
+
+    # ── Resources with no detail in any file ──────────────────────────────────
+    if no_data:
+        with st.expander(
+            f"ℹ️ {len(no_data)} resources have no URL/API detail in the loaded files",
+            expanded=False,
+        ):
+            st.caption(
+                "These resources exist in the Uniware role but don't appear in the Pattern Dump, "
+                "Sidebar, SOAP/REST API or Import/Export files. They may be UI-only permissions, "
+                "widget permissions, or newer resources not yet in these files."
+            )
+            nd_pills = "".join(
+                f'<span class="res-pill" style="background:#f5f5f5;color:#666">{r}</span>'
+                for r in no_data
+            )
+            st.markdown(nd_pills, unsafe_allow_html=True)
+            st.code(", ".join(no_data), language="text")
+
     st.divider()
-    rc=int((pat_a["Type"]=="READ").sum()); wc=int((pat_a["Type"]=="WRITE").sum())
-    st.markdown(f'<div class="info-strip">This permission set allows <b>{rc} READ</b> and '
-                f'<b>{wc} WRITE</b> actions across <b>{pat_a["Access Resource"].nunique()} resources</b>.'
-                f'</div>',unsafe_allow_html=True)
-    tabs=st.tabs([f"📋 Pattern Dump ({len(pat_a)})",f"🗂️ Sidebar ({len(side_a)})",
-                  f"🔌 SOAP ({len(soap_a)})",f"🔌 REST ({len(rest_a)})",
-                  f"📥 Import ({len(imp_a)})",f"📤 Export ({len(exp_a)})",
-                  f"📊 Breakdown ({len(valid_norm)})"])
-    def _show_tab(tab,df,cols):
+
+    # ── Detail tabs ───────────────────────────────────────────────────────────
+    tabs = st.tabs([
+        f"📋 Pattern Dump ({len(pat_a)})",
+        f"🗂️ Sidebar ({len(side_a)})",
+        f"🔌 SOAP ({len(soap_a)})",
+        f"🔌 REST ({len(rest_a)})",
+        f"📥 Import ({len(imp_a)})",
+        f"📤 Export ({len(exp_a)})",
+        f"📊 Breakdown",
+    ])
+
+    def _show_tab(tab, df, cols):
         with tab:
-            if df.empty: st.info("Nothing for this source.")
+            if df.empty:
+                st.info("No detail found in this source for the given resources.")
             else:
-                show=[c for c in cols if c in df.columns]
-                st.dataframe(df[show].reset_index(drop=True),use_container_width=True,
-                             hide_index=True,height=380,column_config=COL_CFG)
-    _show_tab(tabs[0],pat_a,["Access Resource","Activity","Type","Scope","URL Pattern"])
-    _show_tab(tabs[1],side_a,["Tab Name","Side Tab Group","Access Resource","Type","Activity"])
-    _show_tab(tabs[2],soap_a,["API Name","Scope","Access Resource","Type"])
-    _show_tab(tabs[3],rest_a,["URL Pattern","Scope","Access Resource","Activity","Type"])
-    _show_tab(tabs[4],imp_a,["Import Job Type","Access Resource","Type"])
-    _show_tab(tabs[5],exp_a,["Display Name","Access Resource","Kind","Type"])
+                show = [c for c in cols if c in df.columns]
+                st.dataframe(
+                    df[show].reset_index(drop=True),
+                    use_container_width=True, hide_index=True,
+                    height=min(55 + len(df) * 35, 460),
+                    column_config=COL_CFG,
+                )
+
+    _show_tab(tabs[0], pat_a,  ["Access Resource", "Activity", "Type", "Scope", "URL Pattern"])
+    _show_tab(tabs[1], side_a, ["Tab Name", "Side Tab Group", "Access Resource", "Type", "Activity"])
+    _show_tab(tabs[2], soap_a, ["API Name", "Scope", "Access Resource", "Type"])
+    _show_tab(tabs[3], rest_a, ["URL Pattern", "Scope", "Access Resource", "Activity", "Type"])
+    _show_tab(tabs[4], imp_a,  ["Import Job Type", "Access Resource", "Type"])
+    _show_tab(tabs[5], exp_a,  ["Display Name", "Access Resource", "Kind", "Type"])
+
     with tabs[6]:
-        bkd=(pat_a.groupby(["Access Resource","Type"],as_index=False)
-             .agg(URLs=("URL Pattern","nunique"),
-                  Activities=("Activity",lambda s:"  ·  ".join(sorted(set(s))[:4])))
-             .sort_values("URLs",ascending=False))
-        st.dataframe(bkd,use_container_width=True,hide_index=True)
-    all_combined=pd.concat(
-        [df.assign(Source=src) for df,src in
-         [(pat_a,"Pattern Dump"),(side_a,"Sidebar"),(soap_a,"SOAP"),(rest_a,"REST"),
-          (imp_a,"Import"),(exp_a,"Export")] if not df.empty],
-        ignore_index=True)
-    st.download_button("⬇️ Download full audit (CSV)",
-                       all_combined.to_csv(index=False).encode("utf-8"),
-                       "permission_audit.csv","text/csv")
+        if pat_a.empty:
+            st.info("No pattern dump data for this role.")
+        else:
+            bkd = (
+                pat_a.groupby(["Access Resource", "Type"], as_index=False)
+                .agg(URLs=("URL Pattern", "nunique"),
+                     Activities=("Activity", lambda s: "  ·  ".join(sorted(set(s))[:4])))
+                .sort_values("URLs", ascending=False)
+            )
+            st.dataframe(bkd, use_container_width=True, hide_index=True, column_config=COL_CFG)
+
+    # ── Download ──────────────────────────────────────────────────────────────
+    parts = [df.assign(Source=src_name) for df, src_name in [
+        (pat_a,  "Pattern Dump"), (side_a, "Sidebar"),
+        (soap_a, "SOAP"),        (rest_a, "REST"),
+        (imp_a,  "Import"),      (exp_a,  "Export"),
+    ] if not df.empty]
+
+    # Also include resources with no file data as a reference sheet
+    ref = pd.DataFrame({"Access Resource": sorted(all_input),
+                        "Has File Data": ["Yes" if r in with_data else "No" for r in sorted(all_input)]})
+
+    if parts:
+        combined = pd.concat(parts, ignore_index=True)
+        st.download_button(
+            "⬇️ Download full audit (CSV)",
+            data=combined.to_csv(index=False).encode("utf-8"),
+            file_name="permission_audit.csv", mime="text/csv",
+        )
+    st.download_button(
+        "⬇️ Download complete resource list (CSV)",
+        data=ref.to_csv(index=False).encode("utf-8"),
+        file_name="role_resources_complete.csv", mime="text/csv",
+    )
 
 
 def render_audit_tool(pat_df,side_df,soap_df,rest_df,imp_df,exp_df):
