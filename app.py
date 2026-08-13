@@ -4239,6 +4239,7 @@ def fmt_level(raw):
     return LEVEL_MAP.get(raw.upper().strip(), raw)
 
 def smart_suggest(query, pool, limit=60):
+    from difflib import get_close_matches
     q=query.strip().lower()
     if not q: return []
     tokens=q.split(); scored=[]
@@ -4255,7 +4256,21 @@ def smart_suggest(query, pool, limit=60):
             score+=SequenceMatcher(None,q,sl).ratio()*5
             scored.append((score,s))
     scored.sort(key=lambda x:-x[0])
-    return [s for _,s in scored[:limit]]
+    results=[s for _,s in scored[:limit]]
+    # Fuzzy fallback for typos — if few results, add close matches
+    if len(results)<5:
+        fuzzy=get_close_matches(q, pool, n=10, cutoff=0.72)
+        for f in fuzzy:
+            if f not in results:
+                results.append(f)
+    # Also try each token separately for multi-word queries
+    if len(results)<5 and len(tokens)>1:
+        for tok in tokens:
+            fuzzy=get_close_matches(tok, pool, n=5, cutoff=0.72)
+            for f in fuzzy:
+                if f not in results:
+                    results.append(f)
+    return results[:limit]
 
 def score_row(q, activity, resource, url, tab="", group=""):
     if not q: return 0.0
@@ -4291,7 +4306,19 @@ def build_pool(df, url_col, act_col, extra=None):
     for col in (extra or []):
         if col in df.columns:
             for v in df[col].dropna(): add(str(v).lower())
-    return sorted(seen)
+    raw=sorted(seen)
+    # Remove only pure plural forms where the singular is already present
+    # (e.g. "exports" when "export" exists, "picklists" when "picklist" exists)
+    # Do NOT use similarity threshold — it incorrectly removes e.g. "gatepass" near "gate pass"
+    singular_set=set(raw)
+    deduped=[]
+    for w in raw:
+        if (w.endswith("s") and len(w)>4 and w[:-1] in singular_set):
+            continue   # skip pure plural
+        if (w.endswith("es") and len(w)>5 and w[:-2] in singular_set):
+            continue   # skip -es plural
+        deduped.append(w)
+    return deduped
 
 @st.cache_data(show_spinner=False)
 def calc_pat_quick(df):
@@ -4516,11 +4543,24 @@ def apply_filters(df, query, type_filter=None, extra_col=None, extra_vals=None):
     out=df.copy()
     if query:
         q=query.strip().lower()
-        mask=pd.Series(False,index=out.index)
-        for col in ["Activity","Access Resource","URL Pattern","Tab Name","Side Tab Group",
-                    "Scope","API Name","Import Job Type","Display Name","Name","Source"]:
-            if col in out.columns:
-                mask|=out[col].fillna("").str.lower().str.contains(re.escape(q),na=False)
+        tokens=[t for t in q.split() if len(t)>1]
+        SEARCH_COLS=["Activity","Access Resource","URL Pattern","Tab Name","Side Tab Group",
+                     "Scope","API Name","Import Job Type","Display Name","Name","Source"]
+        if len(tokens) > 1:
+            # Multi-word: every token must match somewhere (AND logic)
+            combined = pd.Series([""] * len(out), index=out.index)
+            for col in SEARCH_COLS:
+                if col in out.columns:
+                    combined = combined + " " + out[col].fillna("").str.lower()
+            mask = pd.Series(True, index=out.index)
+            for tok in tokens:
+                mask &= combined.str.contains(re.escape(tok), na=False)
+        else:
+            # Single word: match as before
+            mask = pd.Series(False, index=out.index)
+            for col in SEARCH_COLS:
+                if col in out.columns:
+                    mask |= out[col].fillna("").str.lower().str.contains(re.escape(q), na=False)
         out=out[mask].copy()
         if not out.empty:
             sc=[score_row(query,
