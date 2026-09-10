@@ -4178,16 +4178,7 @@ div[data-testid="stDataFrame"]{border-radius:10px;overflow:hidden;border:1px sol
 #MainMenu {visibility: hidden !important;}
 header[data-testid="stHeader"] {visibility: hidden !important;}
 footer {visibility: hidden !important;}
-/* Make Access Resource cells selectable with one click */
-[data-testid="stDataFrame"] td:nth-child(2) {
-    cursor: pointer;
-    user-select: all;
-    -webkit-user-select: all;
-}
-/* Copy cursor on hover for resource cells */
-[data-testid="stDataFrame"] td:nth-child(2):hover {
-    background: #eef2ff !important;
-}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -4737,6 +4728,126 @@ def render_did_you_mean(query, pool, sk):
             st.session_state[f"{sk}_pending_q"]=s; st.rerun()
 
 # ─────────────────────────────────────────────────────────────────────────────
+# COPYABLE TABLE — renders a flat table with click-to-copy on Access Resource
+# ─────────────────────────────────────────────────────────────────────────────
+def render_copyable_table(df: pd.DataFrame, flat_cols: list[str], height: int = 500):
+    """
+    Renders the result table with a click-to-copy icon on the Access Resource column.
+    Falls back to st.dataframe for any non-flat-view or when Access Resource is absent.
+    """
+    import streamlit.components.v1 as components
+
+    show_cols = [c for c in flat_cols if c in df.columns]
+    if "Access Resource" not in show_cols:
+        # No special column — just use dataframe
+        st.dataframe(df[show_cols], use_container_width=True, hide_index=True,
+                     height=min(80 + len(df)*35, height), column_config=COL_CFG)
+        return
+
+    ar_idx = show_cols.index("Access Resource")
+
+    # Build HTML table
+    col_widths = {
+        "Activity": "200px", "Access Resource": "240px", "Resource ID": "75px",
+        "Scope": "110px", "Type": "80px", "URL Pattern": "340px",
+        "Last Updated": "140px", "Updated": "140px",
+        "Tab Name": "180px", "Side Tab Group": "160px", "Source": "120px",
+        "API Name": "300px", "Import Job Type": "230px",
+        "Display Name": "210px", "Kind": "95px",
+    }
+
+    def esc(v):
+        return str(v).replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace('"',"&quot;")
+
+    header_html = "".join(
+        f'<th style="width:{col_widths.get(c,"120px")};white-space:nowrap">{esc(c)}</th>'
+        for c in show_cols
+    )
+
+    TYPE_BADGE = {
+        "READ":  '<span style="background:#e8f5e9;color:#2e7d32;padding:1px 7px;border-radius:99px;font-size:.75rem;font-weight:700">READ</span>',
+        "WRITE": '<span style="background:#fff3e0;color:#e65100;padding:1px 7px;border-radius:99px;font-size:.75rem;font-weight:700">WRITE</span>',
+    }
+
+    rows_html = []
+    for _, row in df[show_cols].iterrows():
+        cells = []
+        for ci, col in enumerate(show_cols):
+            val = row[col]
+            val_str = "" if pd.isna(val) else str(val)
+            esc_val = esc(val_str)
+
+            if col == "Access Resource":
+                cells.append(
+                    f'''<td class="ar-cell" data-val="{esc_val}"
+                        title="Click to copy: {esc_val}"
+                        onclick="copyAR(this)"
+                        style="font-family:monospace;font-weight:600;color:#283593;
+                               cursor:pointer;position:relative;">
+                        <span class="ar-text">{esc_val}</span>
+                        <span class="copy-icon">⎘</span>
+                    </td>'''
+                )
+            elif col == "Type":
+                badge = TYPE_BADGE.get(val_str, f'<span>{esc_val}</span>')
+                cells.append(f'<td style="white-space:nowrap">{badge}</td>')
+            elif col == "URL Pattern":
+                cells.append(f'<td style="font-family:monospace;font-size:.8rem;color:#444">{esc_val}</td>')
+            else:
+                cells.append(f'<td>{esc_val}</td>')
+
+        rows_html.append(f'<tr>{"".join(cells)}</tr>')
+
+    table_h = min(80 + len(df)*36, height)
+
+    html = f"""
+<style>
+  .ct-wrap {{overflow-x:auto;max-height:{table_h}px;border:1px solid #e4e8ef;border-radius:10px}}
+  .ct-wrap table {{border-collapse:collapse;width:100%;font-size:.85rem;font-family:Arial,sans-serif}}
+  .ct-wrap thead th {{position:sticky;top:0;background:#f4f6fa;color:#333;font-weight:700;
+    font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;
+    padding:8px 12px;border-bottom:2px solid #d0d8e8;text-align:left}}
+  .ct-wrap tbody tr:hover {{background:#f7f9ff}}
+  .ct-wrap tbody td {{padding:7px 12px;border-bottom:1px solid #eef0f5;vertical-align:middle;color:#1a1a2e}}
+  .ar-cell:hover {{background:#eef2ff !important}}
+  .ar-cell:hover .copy-icon {{opacity:1}}
+  .copy-icon {{opacity:0;margin-left:6px;font-size:.85rem;color:#1a73e8;transition:opacity .15s}}
+  .copy-ok {{color:#2e7d32 !important}}
+  .toast {{position:fixed;bottom:24px;right:24px;background:#1a73e8;color:#fff;
+    padding:8px 18px;border-radius:8px;font-size:.88rem;font-weight:600;
+    z-index:9999;opacity:0;transition:opacity .2s;pointer-events:none}}
+  .toast.show {{opacity:1}}
+</style>
+<div class="ct-wrap">
+  <table>
+    <thead><tr>{header_html}</tr></thead>
+    <tbody>{"".join(rows_html)}</tbody>
+  </table>
+</div>
+<div id="toast" class="toast">✓ Copied!</div>
+<script>
+function copyAR(td) {{
+  var val = td.getAttribute("data-val");
+  navigator.clipboard.writeText(val).then(function() {{
+    var icon = td.querySelector(".copy-icon");
+    icon.textContent = "✓";
+    icon.classList.add("copy-ok");
+    var t = document.getElementById("toast");
+    t.textContent = "✓ Copied: " + val;
+    t.classList.add("show");
+    setTimeout(function() {{
+      icon.textContent = "⎘";
+      icon.classList.remove("copy-ok");
+      t.classList.remove("show");
+    }}, 1500);
+  }});
+}}
+</script>
+"""
+    components.html(html, height=table_h + 20, scrolling=False)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # GENERIC TAB RENDERER  (used for Pattern Dump, Sidebar, and API/Jobs sub-tabs)
 # ─────────────────────────────────────────────────────────────────────────────
 def render_tab(df, pool, quick_terms, sk, flat_cols, group_cols,
@@ -4840,12 +4951,7 @@ def render_tab(df, pool, quick_terms, sk, flat_cols, group_cols,
     if "Grouped" in view:
         render_grouped(result,group_cols,sk)
     else:
-        st.dataframe(result[[c for c in flat_cols if c in result.columns]],
-                     use_container_width=True,hide_index=True,
-                     height=min(80+len(result)*35,580),column_config=COL_CFG)
-        unique_res=sorted(result["Access Resource"].unique())
-        st.caption(f"Copy {len(unique_res)} resource name(s) ↓")
-        st.code("  |  ".join(unique_res),language="text")
+        render_copyable_table(result, flat_cols, height=560)
 
     render_detail(result,sk)
 
@@ -4982,8 +5088,7 @@ def render_search_all():
                     unsafe_allow_html=True)
         if res.empty: st.caption("No results from this source."); continue
         show=[c for c in show_cols if c in res.columns]
-        st.dataframe(res[show],use_container_width=True,hide_index=True,
-                     height=min(80+len(res)*35,400),column_config=COL_CFG)
+        render_copyable_table(res, show, height=400)
         st.markdown("<br>",unsafe_allow_html=True)
 
     # Combined export
