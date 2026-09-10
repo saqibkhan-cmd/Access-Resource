@@ -23,7 +23,16 @@ from bs4 import BeautifulSoup
 # ─────────────────────────────────────────────────────────────────────────────
 # PAGE CONFIG
 # ─────────────────────────────────────────────────────────────────────────────
-st.set_page_config(page_title="Uniware Access Auditor", page_icon="🛡️", layout="wide")
+st.set_page_config(
+    page_title="Uniware Access Auditor",
+    page_icon="🛡️",
+    layout="wide",
+    menu_items={
+        "Get Help": None,
+        "Report a bug": None,
+        "About": "🛡️ Uniware Access Resource Auditor — Internal tool for TAMs",
+    },
+)
 
 def _find(patterns):
     """Find a file searching multiple directories and name variants (handles + vs _ in filenames)."""
@@ -4165,6 +4174,20 @@ h1{font-size:1.5rem!important;font-weight:700;margin-bottom:0!important}
 .src-api{color:#00796b;font-weight:700;font-size:.82rem}
 .bm-bar{background:#fffde7;border:1px solid #ffe082;border-radius:8px;padding:8px 14px;margin-bottom:10px}
 div[data-testid="stDataFrame"]{border-radius:10px;overflow:hidden;border:1px solid #e4e8ef}
+/* Hide Streamlit developer menu from end users */
+#MainMenu {visibility: hidden !important;}
+header[data-testid="stHeader"] {visibility: hidden !important;}
+footer {visibility: hidden !important;}
+/* Make Access Resource cells selectable with one click */
+[data-testid="stDataFrame"] td:nth-child(2) {
+    cursor: pointer;
+    user-select: all;
+    -webkit-user-select: all;
+}
+/* Copy cursor on hover for resource cells */
+[data-testid="stDataFrame"] td:nth-child(2):hover {
+    background: #eef2ff !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -4519,7 +4542,11 @@ st.markdown(
 # ─────────────────────────────────────────────────────────────────────────────
 COL_CFG = {
     "Activity":        st.column_config.TextColumn("Activity",        width=200),
-    "Access Resource": st.column_config.TextColumn("Access Resource", width=230),
+    "Access Resource": st.column_config.TextColumn(
+        "Access Resource",
+        width=230,
+        help="Click the cell to select all text, then Ctrl+C (or Cmd+C) to copy.",
+    ),
     "Resource ID":     st.column_config.NumberColumn("Res. ID",       width=75),
     "Scope":           st.column_config.TextColumn("Scope",           width=110,
                            help="Facility=per facility.  Tenant=whole tenant.  Tenant (Both)=both levels."),
@@ -4788,10 +4815,23 @@ def render_tab(df, pool, quick_terms, sk, flat_cols, group_cols,
     if result.empty: render_did_you_mean(effective_query or "your search",pool,sk); return
 
     if effective_query:
-        pills="".join(f'<span class="res-pill">{r}</span>'
-                      for r in sorted(result["Access Resource"].unique()))
-        st.markdown(f'<div class="info-strip"><b>Access resources matched:</b><br><br>{pills}</div>',
+        unique_res = sorted(result["Access Resource"].unique())
+        pills = "".join(f'<span class="res-pill">{r}</span>' for r in unique_res)
+        st.markdown(f'<div class="info-strip"><b>Access resources matched — click one to filter:</b><br><br>{pills}</div>',
                     unsafe_allow_html=True)
+        # Clickable filter: selectbox doubles as pill click
+        res_filter_options = ["All resources"] + unique_res
+        _prev_key = f"{sk}_res_filter"
+        chosen_res = st.selectbox(
+            "Filter to one resource",
+            label_visibility="collapsed",
+            options=res_filter_options,
+            index=0,
+            key=_prev_key,
+            help="Pick a resource to filter the table below to only that resource's URLs.",
+        )
+        if chosen_res != "All resources":
+            result = result[result["Access Resource"] == chosen_res].reset_index(drop=True)
 
     view=st.radio("View as",["Flat table","Grouped by resource"],index=0,horizontal=True,
                   key=f"{sk}_view",
@@ -4919,13 +4959,25 @@ def render_search_all():
         render_did_you_mean(effective_query or "your search",all_pool,"all"); return
 
     if effective_query and all_resources:
-        pills="".join(f'<span class="res-pill">{r}</span>' for r in sorted(all_resources))
-        st.markdown(f'<div class="info-strip"><b>Access resources matched across all sources:</b><br><br>{pills}</div>',
+        sorted_res = sorted(all_resources)
+        pills = "".join(f'<span class="res-pill">{r}</span>' for r in sorted_res)
+        st.markdown(f'<div class="info-strip"><b>Access resources matched across all sources — click one to filter:</b><br><br>{pills}</div>',
                     unsafe_allow_html=True)
+        all_res_filter = st.selectbox(
+            "Filter all results to one resource",
+            label_visibility="collapsed",
+            options=["All resources"] + sorted_res,
+            index=0,
+            key="all_res_filter",
+            help="Pick a resource to filter ALL source results below to only that resource.",
+        )
 
-    # Results per source
+    # Results per source — apply single-resource filter if set
+    _all_rf = st.session_state.get("all_res_filter","All resources") if effective_query and all_resources else "All resources"
     for df,label,cls,show_cols in sources:
         res=source_results.get(label,pd.DataFrame())
+        if _all_rf != "All resources" and not res.empty and "Access Resource" in res.columns:
+            res = res[res["Access Resource"]==_all_rf].reset_index(drop=True)
         st.markdown(f'<p class="{cls}">{label} — {len(res):,} result{"s" if len(res)!=1 else ""}</p>',
                     unsafe_allow_html=True)
         if res.empty: st.caption("No results from this source."); continue
