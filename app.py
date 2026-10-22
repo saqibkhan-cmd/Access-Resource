@@ -4129,8 +4129,14 @@ PREDEFINED_ROLES: dict[str, list[str]] = {
 # ─────────────────────────────────────────────────────────────────────────────
 # SESSION STATE
 # ─────────────────────────────────────────────────────────────────────────────
-for _k, _v in {"bookmarks": set(), "hist_pat": [], "hist_side": [],
-               "hist_all": [], "hist_api": []}.items():
+for _k, _v in {
+    "bookmarks": set(), "hist_pat": [], "hist_side": [],
+    "hist_all": [], "hist_api": [],
+    "tool_active": "🔗 URL Checker",
+    "audit_mode": "🔍 What can this role do?",
+    "audit_input": "🏷️ Predefined role",
+    "uc_mode": "Single URL",
+}.items():
     if _k not in st.session_state:
         st.session_state[_k] = _v
 
@@ -4139,46 +4145,370 @@ for _k, _v in {"bookmarks": set(), "hist_pat": [], "hist_side": [],
 # ─────────────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-.block-container{padding-top:1.2rem;padding-bottom:2rem}
-h1{font-size:1.5rem!important;font-weight:700;margin-bottom:0!important}
-.stTabs [data-baseweb="tab-list"]{gap:0;border-bottom:2px solid #e0e4ea;background:transparent}
-.stTabs [data-baseweb="tab"]{font-size:.9rem;font-weight:600;padding:.4rem 1.1rem;border-radius:0;
-  color:#666;border-bottom:3px solid transparent;margin-bottom:-2px;background:transparent!important}
-.stTabs [aria-selected="true"]{color:#1a73e8!important;border-bottom:3px solid #1a73e8!important;background:transparent!important}
-.stTextInput>div>div>input{font-size:.95rem;border-radius:8px;padding:.45rem .85rem;border:1.5px solid #c8d0dc}
-.stTextInput>div>div>input:focus{border-color:#1a73e8;box-shadow:0 0 0 3px rgba(26,115,232,.1)}
-[data-testid="metric-container"]{background:#f7f9fc;border:1px solid #e4e8ef;border-radius:10px;padding:10px 16px}
-[data-testid="metric-container"] label{font-size:.73rem!important;color:#777!important}
-[data-testid="metric-container"] [data-testid="stMetricValue"]{font-size:1.4rem!important;font-weight:700}
-.info-strip{background:#f0f4ff;border-left:4px solid #1a73e8;border-radius:0 6px 6px 0;
-  padding:8px 14px;font-size:.83rem;color:#2c3e50;margin-bottom:8px}
-.warn-strip{background:#fff8e1;border-left:4px solid #f9a825;border-radius:0 6px 6px 0;
-  padding:8px 14px;font-size:.83rem;color:#5d4037;margin-bottom:8px}
-.res-pill{display:inline-block;background:#e8eaf6;color:#283593;padding:2px 10px;
-  border-radius:99px;font-size:.79rem;font-weight:600;font-family:monospace;margin:2px}
-.badge-r{display:inline-block;background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:99px;font-size:.73rem;font-weight:700}
-.badge-w{display:inline-block;background:#fff3e0;color:#e65100;padding:2px 8px;border-radius:99px;font-size:.73rem;font-weight:700}
-.sec-lbl{font-size:.71rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#888;margin-bottom:3px}
-.grp-hdr{font-size:.88rem;font-weight:700;color:#1a1a2e;background:#f4f6fa;border-radius:8px;
-  padding:7px 13px;margin-top:12px;margin-bottom:3px;border:1px solid #e4e8ef}
-.url-card{background:#fff;border:1.5px solid #1a73e8;border-radius:12px;padding:16px 20px;margin-bottom:8px}
-.url-field-lbl{font-size:.69rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#888;margin-bottom:2px}
-.url-field-val{font-family:monospace;font-size:.9rem;color:#1a1a2e;background:#f7f9fc;
-  border:1px solid #e0e6f0;border-radius:6px;padding:6px 10px;word-break:break-all;margin-bottom:10px}
-.match-exact{background:#e8f5e9;border:1.5px solid #43a047;border-radius:8px;padding:3px 12px;
-  font-size:.78rem;font-weight:700;color:#2e7d32;display:inline-block;margin-bottom:8px}
-.match-fuzzy{background:#fff8e1;border:1.5px solid #f9a825;border-radius:8px;padding:3px 12px;
-  font-size:.78rem;font-weight:700;color:#f57f17;display:inline-block;margin-bottom:8px}
-.src-pat{color:#1a73e8;font-weight:700;font-size:.82rem}
-.src-side{color:#7b1fa2;font-weight:700;font-size:.82rem}
-.src-api{color:#00796b;font-weight:700;font-size:.82rem}
-.bm-bar{background:#fffde7;border:1px solid #ffe082;border-radius:8px;padding:8px 14px;margin-bottom:10px}
-div[data-testid="stDataFrame"]{border-radius:10px;overflow:hidden;border:1px solid #e4e8ef}
-/* Hide Streamlit developer menu from end users */
-#MainMenu {visibility: hidden !important;}
-header[data-testid="stHeader"] {visibility: hidden !important;}
-footer {visibility: hidden !important;}
+@import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap');
 
+/* ═══ TEAL ECLIPSE — Palette: #359FA0 · #8AD6D1 · #FFF0C5 · #FF8C52 ═══ */
+:root {
+  --primary:       #359FA0;
+  --primary-dark:  #2A7A7B;
+  --primary-light: #8AD6D1;
+  --accent:        #FF8C52;
+  --accent-soft:   rgba(255,140,82,0.15);
+  --bg:            #FFF0C5;
+  --surface:       #FFFAF0;
+  --surface-2:     #FFF5DC;
+  --text:          #1A3535;
+  --text-sub:      #3D6B6B;
+  --text-muted:    #7AA8A8;
+  --border:        rgba(53,159,160,0.22);
+  --border-soft:   rgba(53,159,160,0.11);
+  --shadow:        rgba(42,122,123,0.10);
+}
+
+/* ── Base ── */
+html, body, [class*="css"] {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  -webkit-font-smoothing: antialiased !important;
+  color: var(--text) !important;
+}
+
+/* ── Hide Streamlit chrome ── */
+#MainMenu, footer, header[data-testid="stHeader"] { visibility: hidden !important; }
+
+/* ── Page ── */
+.block-container {
+  padding-top: 0 !important;
+  padding-bottom: 4rem !important;
+  max-width: 1080px !important;
+}
+.stApp, [data-testid="stAppViewContainer"] {
+  background: var(--bg) !important;
+}
+
+/* ── Animations ── */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.element-container {
+  animation: fadeSlideIn 0.38s cubic-bezier(0.22,0.61,0.36,1) both;
+  animation-delay: 0.02s;
+}
+
+/* ── APP HEADER ── */
+.app-header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 60%, #1E6A6B 100%);
+  border-radius: 18px;
+  padding: 1.6rem 2rem;
+  margin-bottom: 1.4rem;
+  margin-top: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+.app-header::before {
+  content: '';
+  position: absolute; top: -40%; right: -8%;
+  width: 260px; height: 260px;
+  background: radial-gradient(circle, rgba(138,214,209,0.22) 0%, transparent 70%);
+  pointer-events: none;
+}
+.app-header::after {
+  content: '';
+  position: absolute; bottom: -55%; left: 12%;
+  width: 180px; height: 180px;
+  background: radial-gradient(circle, rgba(255,140,82,0.13) 0%, transparent 70%);
+  pointer-events: none;
+}
+.header-left { display: flex; align-items: center; gap: 14px; z-index: 1; }
+.header-logo {
+  width: 46px; height: 46px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 13px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 21px;
+  backdrop-filter: blur(8px);
+  flex-shrink: 0;
+}
+.header-title {
+  color: #fff !important;
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+  margin: 0 !important; line-height: 1.2 !important;
+}
+.header-sub {
+  color: rgba(255,255,255,0.58) !important;
+  font-size: 0.69rem !important;
+  letter-spacing: 0.05em !important;
+  margin-top: 3px !important;
+  text-transform: uppercase !important;
+}
+.header-badge {
+  z-index: 1;
+  background: rgba(255,140,82,0.22);
+  border: 1px solid rgba(255,140,82,0.38);
+  border-radius: 20px; padding: 4px 13px;
+  color: #FFD4B0 !important;
+  font-size: 0.66rem !important; font-weight: 600 !important;
+  letter-spacing: 0.06em !important; text-transform: uppercase !important;
+}
+
+/* ── NAV TABS — styled as icon cards ── */
+.stTabs [data-baseweb="tab-list"] {
+  background: transparent !important;
+  border-bottom: none !important;
+  gap: 8px !important;
+  padding: 0 !important;
+  margin-bottom: 1.2rem !important;
+}
+.stTabs [data-baseweb="tab"] {
+  background: var(--surface) !important;
+  border: 1.5px solid var(--border) !important;
+  border-radius: 13px !important;
+  padding: 11px 8px !important;
+  font-size: 0.82rem !important; font-weight: 600 !important;
+  color: var(--text-sub) !important;
+  transition: all 0.2s cubic-bezier(0.22,0.61,0.36,1) !important;
+  flex: 1 !important; text-align: center !important;
+  white-space: normal !important; line-height: 1.3 !important;
+}
+.stTabs [data-baseweb="tab"]:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 14px var(--shadow) !important;
+  border-color: var(--primary) !important;
+  color: var(--primary) !important;
+}
+.stTabs [aria-selected="true"] {
+  background: var(--primary) !important;
+  color: #fff !important;
+  border-color: var(--primary) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 5px 18px rgba(53,159,160,0.32) !important;
+  font-weight: 700 !important;
+}
+.stTabs [data-baseweb="tab-highlight"],
+.stTabs [data-baseweb="tab-border"] { display: none !important; }
+.stTabs [data-baseweb="tab-panel"] { padding: 0 !important; }
+
+/* ── SECTION LABELS ── */
+.sec-lbl {
+  font-size: 0.71rem !important; font-weight: 700 !important;
+  text-transform: uppercase !important; letter-spacing: 0.07em !important;
+  color: var(--text-muted) !important; margin-bottom: 3px !important;
+}
+.sec-heading {
+  font-size: 0.95rem !important; font-weight: 800 !important;
+  letter-spacing: 0.05em !important; color: var(--primary-dark) !important;
+  text-transform: uppercase !important; display: block; margin-bottom: 0.1rem !important;
+}
+.sec-line {
+  border: none !important; border-top: 1.5px solid var(--border) !important;
+  margin: 0.2rem 0 0.9rem 0 !important;
+}
+
+/* ── TYPOGRAPHY ── */
+h1 { font-size: 1.45rem !important; font-weight: 700 !important; color: var(--text) !important; margin-bottom: 0 !important; }
+h2 { font-size: 1.1rem !important; font-weight: 700 !important; color: var(--primary-dark) !important; }
+h3 { font-size: 0.95rem !important; font-weight: 700 !important; color: var(--primary-dark) !important; }
+h4 { font-size: 0.88rem !important; font-weight: 800 !important; text-transform: uppercase !important; color: var(--primary-dark) !important; margin: 0 !important; }
+hr  { border: none !important; border-top: 1px solid var(--border-soft) !important; margin: 0.45rem 0 1rem 0 !important; }
+
+.stCaption, [data-testid="stCaptionContainer"] p {
+  font-size: 0.71rem !important; color: var(--text-muted) !important; font-weight: 400 !important;
+}
+
+/* ── INPUTS ── */
+input[type="text"], textarea {
+  border-radius: 9px !important; border: 1px solid var(--border) !important;
+  font-size: 0.82rem !important; font-family: 'Inter', sans-serif !important;
+  color: var(--text) !important; background: var(--surface) !important;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease !important;
+}
+input[type="text"]:focus, textarea:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(53,159,160,0.14) !important;
+}
+input::placeholder, textarea::placeholder {
+  color: var(--text-muted) !important; font-size: 0.78rem !important;
+}
+
+/* ── SELECTBOX / MULTISELECT ── */
+.stSelectbox > div > div {
+  border-radius: 9px !important; border: 1px solid var(--border) !important;
+  font-size: 0.82rem !important; background: var(--surface) !important;
+  transition: border-color 0.18s ease !important;
+}
+.stSelectbox > div > div:focus-within {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(53,159,160,0.12) !important;
+}
+.stMultiSelect > div > div {
+  border-radius: 9px !important; border: 1px solid var(--border) !important;
+  background: var(--surface) !important;
+}
+.stMultiSelect [data-baseweb="tag"] {
+  background: rgba(53,159,160,0.12) !important; color: var(--primary-dark) !important;
+  border-radius: 6px !important; font-size: 0.74rem !important; font-weight: 500 !important;
+  border: 1px solid rgba(53,159,160,0.2) !important;
+}
+
+/* ── BUTTONS — primary (active state) ── */
+.stButton > button[kind="primary"] {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
+  color: #fff !important; border: none !important;
+  border-radius: 10px !important; font-size: 0.83rem !important; font-weight: 600 !important;
+  padding: 0.52rem 1.5rem !important;
+  box-shadow: 0 3px 12px rgba(53,159,160,0.28) !important;
+  transition: all 0.2s cubic-bezier(0.22,0.61,0.36,1) !important;
+}
+.stButton > button[kind="primary"]:hover {
+  box-shadow: 0 5px 20px rgba(53,159,160,0.38) !important;
+  transform: translateY(-2px) !important;
+}
+.stButton > button[kind="primary"]:active { transform: translateY(0) !important; }
+
+/* ── BUTTONS — secondary (default / inactive) ── */
+.stButton > button:not([kind="primary"]) {
+  border-radius: 9px !important; font-size: 0.8rem !important; font-weight: 500 !important;
+  border: 1px solid var(--border) !important; background: var(--surface) !important;
+  color: var(--text) !important; transition: all 0.17s ease !important;
+}
+.stButton > button:not([kind="primary"]):hover {
+  border-color: var(--primary) !important; color: var(--primary) !important;
+  background: rgba(53,159,160,0.06) !important; transform: translateY(-1px) !important;
+}
+
+/* ── DOWNLOAD BUTTON ── */
+.stDownloadButton > button {
+  border-radius: 9px !important; font-size: 0.79rem !important; font-weight: 500 !important;
+  border: 1px solid var(--border) !important; background: var(--surface) !important;
+  transition: all 0.17s ease !important;
+}
+.stDownloadButton > button:hover {
+  border-color: var(--primary) !important; color: var(--primary) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ── METRICS ── */
+[data-testid="metric-container"] {
+  background: var(--surface) !important; border: 1px solid var(--border) !important;
+  border-radius: 12px !important; padding: 10px 15px !important;
+}
+[data-testid="metric-container"] label {
+  font-size: 0.71rem !important; color: var(--text-muted) !important;
+  text-transform: uppercase !important; letter-spacing: 0.04em !important;
+}
+[data-testid="metric-container"] [data-testid="stMetricValue"] {
+  font-size: 1.42rem !important; font-weight: 700 !important; color: var(--primary-dark) !important;
+}
+
+/* ── EXPANDER ── */
+.streamlit-expanderHeader {
+  border-radius: 9px !important; font-size: 0.78rem !important; font-weight: 500 !important;
+  background: rgba(53,159,160,0.05) !important; border: 1px solid var(--border-soft) !important;
+  color: var(--text-sub) !important; transition: background 0.17s ease !important;
+}
+.streamlit-expanderHeader:hover { background: rgba(53,159,160,0.09) !important; }
+.streamlit-expanderContent {
+  border: 1px solid var(--border-soft) !important; border-top: none !important;
+  border-radius: 0 0 9px 9px !important;
+}
+
+/* ── CODE ── */
+[data-testid="stCode"] pre {
+  background: rgba(53,159,160,0.06) !important; border-radius: 10px !important;
+}
+[data-testid="stCode"] code { color: var(--primary-dark) !important; font-size: 0.79rem !important; }
+
+/* ── DATAFRAME ── */
+div[data-testid="stDataFrame"] {
+  border-radius: 12px !important; overflow: hidden !important;
+  border: 1px solid var(--border) !important;
+}
+
+/* ── INFO / WARN STRIPS ── */
+.info-strip {
+  background: rgba(53,159,160,0.07); border-left: 4px solid var(--primary);
+  border-radius: 0 8px 8px 0; padding: 9px 15px;
+  font-size: 0.84rem; color: var(--text); margin-bottom: 9px;
+}
+.warn-strip {
+  background: rgba(255,140,82,0.07); border-left: 4px solid var(--accent);
+  border-radius: 0 8px 8px 0; padding: 9px 15px;
+  font-size: 0.84rem; color: var(--text); margin-bottom: 9px;
+}
+
+/* ── RESOURCE PILLS ── */
+.res-pill {
+  display: inline-block; background: rgba(53,159,160,0.11); color: var(--primary-dark);
+  padding: 2px 10px; border-radius: 99px; font-size: 0.78rem; font-weight: 600;
+  font-family: 'Fira Mono', monospace; margin: 2px; border: 1px solid rgba(53,159,160,0.2);
+}
+
+/* ── TYPE BADGES ── */
+.badge-r {
+  display: inline-block; background: rgba(138,214,209,0.28); color: #1E6A6B;
+  padding: 2px 8px; border-radius: 99px; font-size: 0.72rem; font-weight: 700;
+}
+.badge-w {
+  display: inline-block; background: rgba(255,140,82,0.16); color: #C04800;
+  padding: 2px 8px; border-radius: 99px; font-size: 0.72rem; font-weight: 700;
+}
+
+/* ── GROUPED HEADER ── */
+.grp-hdr {
+  font-size: 0.87rem; font-weight: 700; color: var(--text);
+  background: var(--surface-2); border-radius: 8px; padding: 7px 13px;
+  margin-top: 11px; margin-bottom: 3px; border: 1px solid var(--border);
+}
+
+/* ── URL CHECKER CARDS ── */
+.url-card {
+  background: var(--surface); border: 1.5px solid var(--primary);
+  border-radius: 12px; padding: 15px 18px; margin-bottom: 7px;
+}
+.url-field-lbl {
+  font-size: 0.67rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 2px;
+}
+.url-field-val {
+  font-family: monospace; font-size: 0.88rem; color: var(--text);
+  background: rgba(53,159,160,0.06); border: 1px solid var(--border-soft);
+  border-radius: 6px; padding: 6px 10px; word-break: break-all; margin-bottom: 9px;
+}
+.match-exact {
+  background: rgba(53,159,160,0.11); border: 1.5px solid var(--primary);
+  border-radius: 8px; padding: 3px 11px; font-size: 0.77rem; font-weight: 700;
+  color: var(--primary-dark); display: inline-block; margin-bottom: 7px;
+}
+.match-fuzzy {
+  background: rgba(255,140,82,0.10); border: 1.5px solid var(--accent);
+  border-radius: 8px; padding: 3px 11px; font-size: 0.77rem; font-weight: 700;
+  color: #C04800; display: inline-block; margin-bottom: 7px;
+}
+
+/* ── SOURCE LABELS ── */
+.src-pat  { color: var(--primary-dark); font-weight: 700; font-size: 0.84rem; }
+.src-side { color: #7A4A00; font-weight: 700; font-size: 0.84rem; }
+.src-api  { color: #1E6A6B; font-weight: 700; font-size: 0.84rem; }
+
+/* ── BOOKMARK BAR ── */
+.bm-bar {
+  background: rgba(255,140,82,0.07); border: 1px solid rgba(255,140,82,0.22);
+  border-radius: 8px; padding: 7px 13px; margin-bottom: 9px;
+}
+
+/* ── FOOTER ── */
+.app-footer {
+  text-align: center; padding: 1.1rem 0 0.4rem;
+  color: var(--text-muted); font-size: 0.7rem; letter-spacing: 0.02em;
+  border-top: 1px solid var(--border-soft); margin-top: 2rem;
+}
+.app-footer strong { color: var(--primary-dark); font-weight: 600; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -4513,20 +4843,18 @@ sidebar_lookup = build_sidebar_lookup(side_df)
 # ─────────────────────────────────────────────────────────────────────────────
 # HEADER
 # ─────────────────────────────────────────────────────────────────────────────
-st.markdown("# 🛡️ Uniware Access Resource Auditor")
-parts=[
-    f'Pattern Dump <b>{len(pat_df):,}</b>',
-    f'Sidebar <b>{len(side_df)}</b>',
-    f'SOAP API <b>{len(soap_df)}</b>',
-    f'REST API <b>{len(rest_df)}</b>',
-    f'Import Jobs <b>{len(imp_df)}</b>',
-    f'Export/Tables <b>{len(exp_df)}</b>',
-]
-st.markdown(
-    '<p style="color:#777;font-size:.8rem;margin-top:2px;margin-bottom:.5rem">'
-    + "  ·  ".join(parts) + '</p>',
-    unsafe_allow_html=True,
-)
+st.markdown(f"""
+<div class="app-header">
+  <div class="header-left">
+    <div class="header-logo">🛡️</div>
+    <div>
+      <div class="header-title">Uniware Access Resource Auditor</div>
+      <div class="header-sub">Permission Lookup · Role Audit · URL Checker · 6 Sources</div>
+    </div>
+  </div>
+  <div class="header-badge">{len(pat_df):,} URLs · {pat_df['Access Resource'].nunique()} Resources</div>
+</div>
+""", unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # COLUMN CONFIG
@@ -4944,9 +5272,21 @@ def render_tab(df, pool, quick_terms, sk, flat_cols, group_cols,
         if chosen_res != "All resources":
             result = result[result["Access Resource"] == chosen_res].reset_index(drop=True)
 
-    view=st.radio("View as",["Flat table","Grouped by resource"],index=0,horizontal=True,
-                  key=f"{sk}_view",
-                  help="Flat: all rows together, sortable.  Grouped: rows under each resource header.")
+    # ── View toggle — mini-tab buttons ──────────────────────────────────
+    _vk = f"{sk}_view"
+    _v  = st.session_state.get(_vk, "Flat table")
+    _vc1, _vc2 = st.columns(2, gap="small")
+    with _vc1:
+        if st.button("☰  Flat table", key=f"{sk}_v_flat",
+                     type="primary" if _v == "Flat table" else "secondary",
+                     use_container_width=True):
+            st.session_state[_vk] = "Flat table"; st.rerun()
+    with _vc2:
+        if st.button("⊞  Grouped by resource", key=f"{sk}_v_grp",
+                     type="primary" if _v == "Grouped by resource" else "secondary",
+                     use_container_width=True):
+            st.session_state[_vk] = "Grouped by resource"; st.rerun()
+    view = st.session_state.get(_vk, "Flat table")
 
     if "Grouped" in view:
         render_grouped(result,group_cols,sk)
@@ -5194,7 +5534,21 @@ def render_url_result(info,url):
 def render_url_checker(pat_df,rest_df,sidebar_lookup):
     st.markdown("#### 🔗 URL Checker — paste a URL, get its access resource instantly")
     st.caption("Covers both Pattern Dump and REST API URLs. Supports exact, wildcard, and fuzzy matching.")
-    mode=st.radio("Mode",["Single URL","Bulk (multiple URLs)"],horizontal=True)
+    _ucm = st.session_state.get("uc_mode", "Single URL")
+    _um1, _um2 = st.columns(2, gap="small")
+    with _um1:
+        if st.button("Single URL", key="uc_mode_s",
+                     type="primary" if _ucm == "Single URL" else "secondary",
+                     use_container_width=True,
+                     help="Paste one URL and see the full resource detail card."):
+            st.session_state["uc_mode"] = "Single URL"; st.rerun()
+    with _um2:
+        if st.button("Bulk (multiple URLs)", key="uc_mode_b",
+                     type="primary" if _ucm != "Single URL" else "secondary",
+                     use_container_width=True,
+                     help="Paste many URLs, one per line, and get a results table."):
+            st.session_state["uc_mode"] = "Bulk (multiple URLs)"; st.rerun()
+    mode = st.session_state.get("uc_mode", "Single URL")
     if mode=="Single URL":
         if st.session_state.pop("uc_do_clear", False):
             st.session_state["uc_single"] = ""
@@ -5437,18 +5791,21 @@ def render_audit_tool(pat_df,side_df,soap_df,rest_df,imp_df,exp_df):
     st.markdown("#### 🔐 Permission & Role Audit")
     n_roles = len(PREDEFINED_ROLES)
 
-    mode = st.radio(
-        "What do you want to do?",
-        ["🔍 What can this role do?", "🕵️ What is a user missing?"],
-        horizontal=True,
-        key="audit_mode",
-        help=(
-            "What can this role do: pick a role or paste resources → see every URL, sidebar tab, "
-            "SOAP/REST API, import/export job this role can access.  "
-            "What is a user missing: pick the expected role → paste what the user actually has → "
-            "instantly see missing, correct, and extra resources."
-        ),
-    )
+    _am = st.session_state.get("audit_mode", "🔍 What can this role do?")
+    _amc1, _amc2 = st.columns(2, gap="small")
+    with _amc1:
+        if st.button("🔍  What can this role do?", key="audit_mode_a",
+                     type="primary" if "What can" in _am else "secondary",
+                     use_container_width=True,
+                     help="Pick a role or paste resources to see every URL, tab and API accessible."):
+            st.session_state["audit_mode"] = "🔍 What can this role do?"; st.rerun()
+    with _amc2:
+        if st.button("🕵️  What is a user missing?", key="audit_mode_b",
+                     type="primary" if "missing" in _am else "secondary",
+                     use_container_width=True,
+                     help="Pick the expected role, paste the user's actual resources, see the gap instantly."):
+            st.session_state["audit_mode"] = "🕵️ What is a user missing?"; st.rerun()
+    mode = st.session_state.get("audit_mode", "🔍 What can this role do?")
     st.divider()
 
     # ── MODE A: What can this role do? ────────────────────────────────────────
@@ -5457,13 +5814,21 @@ def render_audit_tool(pat_df,side_df,soap_df,rest_df,imp_df,exp_df):
             f"Select a predefined role ({n_roles} loaded from live dump) or paste custom resources. "
             "Shows access across all 6 sources."
         )
-        input_mode = st.radio(
-            "Input",
-            ["🏷️ Predefined role", "✏️ Custom resources"],
-            horizontal=True, key="audit_input",
-            help="Predefined role: loaded directly from the Uniware roles dump.  "
-                 "Custom: paste any resource names from a user's role config.",
-        )
+        _ai = st.session_state.get("audit_input", "🏷️ Predefined role")
+        _aic1, _aic2 = st.columns(2, gap="small")
+        with _aic1:
+            if st.button("🏷️  Predefined role", key="audit_inp_pre",
+                         type="primary" if "Predefined" in _ai else "secondary",
+                         use_container_width=True,
+                         help="Roles loaded directly from the Uniware live dump — 100% accurate."):
+                st.session_state["audit_input"] = "🏷️ Predefined role"; st.rerun()
+        with _aic2:
+            if st.button("✏️  Custom resources", key="audit_inp_cus",
+                         type="primary" if "Custom" in _ai else "secondary",
+                         use_container_width=True,
+                         help="Paste any resource names from a user's role config."):
+                st.session_state["audit_input"] = "✏️ Custom resources"; st.rerun()
+        input_mode = st.session_state.get("audit_input", "🏷️ Predefined role")
 
         if "Predefined" in input_mode:
             role_pick = st.selectbox(
@@ -5608,18 +5973,29 @@ def render_audit_tool(pat_df,side_df,soap_df,rest_df,imp_df,exp_df):
 # TOOLS TAB
 # ─────────────────────────────────────────────────────────────────────────────
 def render_tools():
-    tool = st.radio(
-        "Choose a tool",
-        ["🔗 URL Checker", "⚖️ Compare Resources", "🔐 Permission & Role Audit"],
-        horizontal=True,
-        help=(
-            "URL Checker: paste any URL → get its access resource instantly, with bulk mode.  "
-            "Compare: side-by-side diff of two access resources.  "
-            "Permission & Role Audit: see what a role can access OR check what a user is missing."
-        ),
-    )
+    _tk = st.session_state.get("tool_active", "🔗 URL Checker")
+    _tc1, _tc2, _tc3 = st.columns(3, gap="small")
+    with _tc1:
+        if st.button("🔗  URL Checker", key="tool_url",
+                     type="primary" if "URL" in _tk else "secondary",
+                     use_container_width=True,
+                     help="Paste any URL to get its access resource instantly. Supports bulk lookup."):
+            st.session_state["tool_active"] = "🔗 URL Checker"; st.rerun()
+    with _tc2:
+        if st.button("⚖️  Compare Resources", key="tool_cmp",
+                     type="primary" if "Compare" in _tk else "secondary",
+                     use_container_width=True,
+                     help="Side-by-side diff of two access resources — see what overlaps and what's unique."):
+            st.session_state["tool_active"] = "⚖️ Compare Resources"; st.rerun()
+    with _tc3:
+        if st.button("🔐  Permission & Role Audit", key="tool_aud",
+                     type="primary" if "Permission" in _tk or "Audit" in _tk else "secondary",
+                     use_container_width=True,
+                     help="See what a role can access, or find what a user is missing from their role."):
+            st.session_state["tool_active"] = "🔐 Permission & Role Audit"; st.rerun()
+    tool = st.session_state.get("tool_active", "🔗 URL Checker")
     st.divider()
-    if "URL"     in tool:  render_url_checker(pat_df, rest_df, sidebar_lookup)
+    if "URL"      in tool: render_url_checker(pat_df, rest_df, sidebar_lookup)
     elif "Compare" in tool: render_compare(pat_df)
     else:                   render_audit_tool(pat_df, side_df, soap_df, rest_df, imp_df, exp_df)
 
@@ -5693,5 +6069,8 @@ with t_side:
 with t_api:   render_api_jobs()
 with t_tools: render_tools()
 
-st.divider()
-st.caption(f"🛡️ Uniware Access Resource Auditor  ·  6 sources loaded  ·  {TXT_FILE}")
+st.markdown("""
+<div class="app-footer">
+  Managed by <strong>Saqib Khan</strong> &nbsp;·&nbsp; v7 &nbsp;·&nbsp; 6 sources loaded
+</div>
+""", unsafe_allow_html=True)
