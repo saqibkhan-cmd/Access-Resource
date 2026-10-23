@@ -4147,22 +4147,26 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap');
 
-/* ═══ TEAL ECLIPSE — Palette: #359FA0 · #8AD6D1 · #FFF0C5 · #FF8C52 ═══ */
+/* ═══ BLUE ECLIPSE  #0F0E47 · #272757 · #505081 · #8686AC ═══ */
 :root {
-  --primary:       #359FA0;
-  --primary-dark:  #2A7A7B;
-  --primary-light: #8AD6D1;
-  --accent:        #FF8C52;
-  --accent-soft:   rgba(255,140,82,0.15);
-  --bg:            #FFF0C5;
-  --surface:       #FFFAF0;
-  --surface-2:     #FFF5DC;
-  --text:          #1A3535;
-  --text-sub:      #3D6B6B;
-  --text-muted:    #7AA8A8;
-  --border:        rgba(53,159,160,0.22);
-  --border-soft:   rgba(53,159,160,0.11);
-  --shadow:        rgba(42,122,123,0.10);
+  --navy:        #0F0E47;
+  --navy-mid:    #272757;
+  --slate:       #505081;
+  --lavender:    #8686AC;
+  --bg:          #EEEEF6;
+  --surface:     #F5F5FB;
+  --surface-w:   #FAFAFE;
+  --text:        #1A1A3E;
+  --text-sub:    #505081;
+  --text-muted:  #8686AC;
+  --border:      rgba(80,80,129,0.20);
+  --border-soft: rgba(80,80,129,0.11);
+  --shadow:      rgba(15,14,71,0.11);
+  --accent:      #6C63FF;
+  --read-bg:     rgba(80,80,129,0.12);
+  --read-text:   #272757;
+  --write-bg:    rgba(108,99,255,0.13);
+  --write-text:  #0F0E47;
 }
 
 /* ── Base ── */
@@ -4191,13 +4195,13 @@ html, body, [class*="css"] {
   to   { opacity: 1; transform: translateY(0); }
 }
 .element-container {
-  animation: fadeSlideIn 0.38s cubic-bezier(0.22,0.61,0.36,1) both;
+  animation: fadeSlideIn 0.36s cubic-bezier(0.22,0.61,0.36,1) both;
   animation-delay: 0.02s;
 }
 
-/* ── APP HEADER ── */
+/* ══ APP HEADER ══════════════════════════════════════════════ */
 .app-header {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 60%, #1E6A6B 100%);
+  background: linear-gradient(135deg, var(--navy-mid) 0%, var(--navy) 65%, #070630 100%);
   border-radius: 18px;
   padding: 1.6rem 2rem;
   margin-bottom: 1.4rem;
@@ -4210,60 +4214,52 @@ html, body, [class*="css"] {
 }
 .app-header::before {
   content: '';
-  position: absolute; top: -40%; right: -8%;
-  width: 260px; height: 260px;
-  background: radial-gradient(circle, rgba(138,214,209,0.22) 0%, transparent 70%);
+  position: absolute; top: -50%; right: -5%;
+  width: 240px; height: 240px;
+  background: radial-gradient(circle, rgba(134,134,172,0.22) 0%, transparent 70%);
   pointer-events: none;
 }
 .app-header::after {
   content: '';
-  position: absolute; bottom: -55%; left: 12%;
-  width: 180px; height: 180px;
-  background: radial-gradient(circle, rgba(255,140,82,0.13) 0%, transparent 70%);
+  position: absolute; bottom: -55%; left: 10%;
+  width: 170px; height: 170px;
+  background: radial-gradient(circle, rgba(108,99,255,0.15) 0%, transparent 70%);
   pointer-events: none;
 }
 .header-left { display: flex; align-items: center; gap: 14px; z-index: 1; }
 .header-logo {
   width: 46px; height: 46px;
-  background: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.22);
   border-radius: 13px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 21px;
-  backdrop-filter: blur(8px);
-  flex-shrink: 0;
+  font-size: 21px; backdrop-filter: blur(8px); flex-shrink: 0;
 }
 .header-title {
-  color: #fff !important;
-  font-size: 1.25rem !important;
-  font-weight: 700 !important;
-  letter-spacing: -0.01em !important;
-  margin: 0 !important; line-height: 1.2 !important;
+  color: #ffffff !important;
+  font-size: 1.25rem !important; font-weight: 700 !important;
+  letter-spacing: -0.01em !important; margin: 0 !important; line-height: 1.2 !important;
 }
 .header-sub {
-  color: rgba(255,255,255,0.58) !important;
-  font-size: 0.69rem !important;
-  letter-spacing: 0.05em !important;
-  margin-top: 3px !important;
-  text-transform: uppercase !important;
+  color: rgba(255,255,255,0.52) !important;
+  font-size: 0.68rem !important; letter-spacing: 0.05em !important;
+  margin-top: 3px !important; text-transform: uppercase !important;
 }
 .header-badge {
   z-index: 1;
-  background: rgba(255,140,82,0.22);
-  border: 1px solid rgba(255,140,82,0.38);
+  background: rgba(108,99,255,0.22);
+  border: 1px solid rgba(134,134,172,0.35);
   border-radius: 20px; padding: 4px 13px;
-  color: #FFD4B0 !important;
-  font-size: 0.66rem !important; font-weight: 600 !important;
+  color: #C5C4E8 !important;
+  font-size: 0.65rem !important; font-weight: 600 !important;
   letter-spacing: 0.06em !important; text-transform: uppercase !important;
 }
 
-/* ── NAV TABS — styled as icon cards ── */
+/* ══ NAV TABS — icon cards ══════════════════════════════════ */
 .stTabs [data-baseweb="tab-list"] {
   background: transparent !important;
   border-bottom: none !important;
-  gap: 8px !important;
-  padding: 0 !important;
-  margin-bottom: 1.2rem !important;
+  gap: 8px !important; padding: 0 !important; margin-bottom: 1.2rem !important;
 }
 .stTabs [data-baseweb="tab"] {
   background: var(--surface) !important;
@@ -4279,196 +4275,208 @@ html, body, [class*="css"] {
 .stTabs [data-baseweb="tab"]:hover {
   transform: translateY(-2px) !important;
   box-shadow: 0 4px 14px var(--shadow) !important;
-  border-color: var(--primary) !important;
-  color: var(--primary) !important;
+  border-color: var(--slate) !important;
+  color: var(--navy-mid) !important;
 }
 .stTabs [aria-selected="true"] {
-  background: var(--primary) !important;
-  color: #fff !important;
-  border-color: var(--primary) !important;
+  background: var(--navy) !important;
+  color: #ffffff !important;
+  border-color: var(--navy) !important;
   transform: translateY(-2px) !important;
-  box-shadow: 0 5px 18px rgba(53,159,160,0.32) !important;
+  box-shadow: 0 5px 18px rgba(15,14,71,0.28) !important;
   font-weight: 700 !important;
 }
 .stTabs [data-baseweb="tab-highlight"],
 .stTabs [data-baseweb="tab-border"] { display: none !important; }
 .stTabs [data-baseweb="tab-panel"] { padding: 0 !important; }
 
-/* ── SECTION LABELS ── */
+/* ══ SECTION LABELS — navy block style ════════════════════════ */
 .sec-lbl {
-  font-size: 0.71rem !important; font-weight: 700 !important;
+  display: inline-block !important;
+  background: linear-gradient(135deg, var(--navy), var(--navy-mid)) !important;
+  color: rgba(255,255,255,0.82) !important;
+  padding: 3px 11px !important; border-radius: 6px !important;
+  font-size: 0.68rem !important; font-weight: 700 !important;
   text-transform: uppercase !important; letter-spacing: 0.07em !important;
-  color: var(--text-muted) !important; margin-bottom: 3px !important;
+  margin-bottom: 4px !important;
 }
 .sec-heading {
-  font-size: 0.95rem !important; font-weight: 800 !important;
-  letter-spacing: 0.05em !important; color: var(--primary-dark) !important;
-  text-transform: uppercase !important; display: block; margin-bottom: 0.1rem !important;
+  font-size: 0.72rem !important; font-weight: 800 !important;
+  letter-spacing: 0.07em !important;
+  color: rgba(255,255,255,0.85) !important; text-transform: uppercase !important;
+  background: linear-gradient(135deg, var(--navy), var(--navy-mid)) !important;
+  padding: 4px 14px !important; border-radius: 7px !important;
+  display: inline-block !important; margin-bottom: 0.2rem !important;
 }
 .sec-line {
   border: none !important; border-top: 1.5px solid var(--border) !important;
   margin: 0.2rem 0 0.9rem 0 !important;
 }
 
-/* ── TYPOGRAPHY ── */
+/* ── Typography ── */
 h1 { font-size: 1.45rem !important; font-weight: 700 !important; color: var(--text) !important; margin-bottom: 0 !important; }
-h2 { font-size: 1.1rem !important; font-weight: 700 !important; color: var(--primary-dark) !important; }
-h3 { font-size: 0.95rem !important; font-weight: 700 !important; color: var(--primary-dark) !important; }
-h4 { font-size: 0.88rem !important; font-weight: 800 !important; text-transform: uppercase !important; color: var(--primary-dark) !important; margin: 0 !important; }
+h2 { font-size: 1.1rem !important; font-weight: 700 !important; color: var(--navy-mid) !important; }
+h3 { font-size: 0.95rem !important; font-weight: 700 !important; color: var(--navy-mid) !important; }
+h4 { font-size: 0.88rem !important; font-weight: 800 !important; text-transform: uppercase !important; color: var(--navy-mid) !important; margin: 0 !important; }
 hr  { border: none !important; border-top: 1px solid var(--border-soft) !important; margin: 0.45rem 0 1rem 0 !important; }
-
 .stCaption, [data-testid="stCaptionContainer"] p {
-  font-size: 0.71rem !important; color: var(--text-muted) !important; font-weight: 400 !important;
+  font-size: 0.71rem !important; color: var(--text-muted) !important;
 }
 
-/* ── INPUTS ── */
+/* ── Inputs ── */
 input[type="text"], textarea {
   border-radius: 9px !important; border: 1px solid var(--border) !important;
   font-size: 0.82rem !important; font-family: 'Inter', sans-serif !important;
-  color: var(--text) !important; background: var(--surface) !important;
+  color: var(--text) !important; background: var(--surface-w) !important;
   transition: border-color 0.18s ease, box-shadow 0.18s ease !important;
 }
 input[type="text"]:focus, textarea:focus {
-  border-color: var(--primary) !important;
-  box-shadow: 0 0 0 3px rgba(53,159,160,0.14) !important;
+  border-color: var(--slate) !important;
+  box-shadow: 0 0 0 3px rgba(80,80,129,0.14) !important;
 }
 input::placeholder, textarea::placeholder {
   color: var(--text-muted) !important; font-size: 0.78rem !important;
 }
 
-/* ── SELECTBOX / MULTISELECT ── */
+/* ── Selectbox / Multiselect ── */
 .stSelectbox > div > div {
   border-radius: 9px !important; border: 1px solid var(--border) !important;
-  font-size: 0.82rem !important; background: var(--surface) !important;
-  transition: border-color 0.18s ease !important;
+  font-size: 0.82rem !important; background: var(--surface-w) !important;
 }
 .stSelectbox > div > div:focus-within {
-  border-color: var(--primary) !important;
-  box-shadow: 0 0 0 3px rgba(53,159,160,0.12) !important;
+  border-color: var(--slate) !important;
+  box-shadow: 0 0 0 3px rgba(80,80,129,0.12) !important;
 }
 .stMultiSelect > div > div {
   border-radius: 9px !important; border: 1px solid var(--border) !important;
-  background: var(--surface) !important;
+  background: var(--surface-w) !important;
 }
 .stMultiSelect [data-baseweb="tag"] {
-  background: rgba(53,159,160,0.12) !important; color: var(--primary-dark) !important;
+  background: rgba(80,80,129,0.12) !important; color: var(--navy-mid) !important;
   border-radius: 6px !important; font-size: 0.74rem !important; font-weight: 500 !important;
-  border: 1px solid rgba(53,159,160,0.2) !important;
 }
 
-/* ── BUTTONS — primary (active state) ── */
+/* ── Buttons — primary (active) ── */
 .stButton > button[kind="primary"] {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
-  color: #fff !important; border: none !important;
+  background: linear-gradient(135deg, var(--navy-mid) 0%, var(--navy) 100%) !important;
+  color: #ffffff !important; border: none !important;
   border-radius: 10px !important; font-size: 0.83rem !important; font-weight: 600 !important;
   padding: 0.52rem 1.5rem !important;
-  box-shadow: 0 3px 12px rgba(53,159,160,0.28) !important;
+  box-shadow: 0 3px 12px rgba(15,14,71,0.24) !important;
   transition: all 0.2s cubic-bezier(0.22,0.61,0.36,1) !important;
 }
 .stButton > button[kind="primary"]:hover {
-  box-shadow: 0 5px 20px rgba(53,159,160,0.38) !important;
+  box-shadow: 0 5px 20px rgba(15,14,71,0.32) !important;
   transform: translateY(-2px) !important;
 }
 .stButton > button[kind="primary"]:active { transform: translateY(0) !important; }
 
-/* ── BUTTONS — secondary (default / inactive) ── */
+/* ── Buttons — secondary ── */
 .stButton > button:not([kind="primary"]) {
   border-radius: 9px !important; font-size: 0.8rem !important; font-weight: 500 !important;
-  border: 1px solid var(--border) !important; background: var(--surface) !important;
+  border: 1px solid var(--border) !important; background: var(--surface-w) !important;
   color: var(--text) !important; transition: all 0.17s ease !important;
 }
 .stButton > button:not([kind="primary"]):hover {
-  border-color: var(--primary) !important; color: var(--primary) !important;
-  background: rgba(53,159,160,0.06) !important; transform: translateY(-1px) !important;
+  border-color: var(--slate) !important; color: var(--navy-mid) !important;
+  background: rgba(80,80,129,0.06) !important; transform: translateY(-1px) !important;
 }
-
-/* ── DOWNLOAD BUTTON ── */
 .stDownloadButton > button {
-  border-radius: 9px !important; font-size: 0.79rem !important; font-weight: 500 !important;
-  border: 1px solid var(--border) !important; background: var(--surface) !important;
+  border-radius: 9px !important; font-size: 0.79rem !important;
+  border: 1px solid var(--border) !important; background: var(--surface-w) !important;
   transition: all 0.17s ease !important;
 }
 .stDownloadButton > button:hover {
-  border-color: var(--primary) !important; color: var(--primary) !important;
+  border-color: var(--slate) !important; color: var(--navy-mid) !important;
   transform: translateY(-1px) !important;
 }
 
-/* ── METRICS ── */
+/* ── Metrics ── */
 [data-testid="metric-container"] {
-  background: var(--surface) !important; border: 1px solid var(--border) !important;
+  background: var(--surface-w) !important; border: 1px solid var(--border) !important;
   border-radius: 12px !important; padding: 10px 15px !important;
+  box-shadow: 0 1px 6px var(--shadow) !important;
 }
 [data-testid="metric-container"] label {
   font-size: 0.71rem !important; color: var(--text-muted) !important;
   text-transform: uppercase !important; letter-spacing: 0.04em !important;
 }
 [data-testid="metric-container"] [data-testid="stMetricValue"] {
-  font-size: 1.42rem !important; font-weight: 700 !important; color: var(--primary-dark) !important;
+  font-size: 1.42rem !important; font-weight: 700 !important; color: var(--navy-mid) !important;
 }
 
-/* ── EXPANDER ── */
+/* ── Expander ── */
 .streamlit-expanderHeader {
   border-radius: 9px !important; font-size: 0.78rem !important; font-weight: 500 !important;
-  background: rgba(53,159,160,0.05) !important; border: 1px solid var(--border-soft) !important;
-  color: var(--text-sub) !important; transition: background 0.17s ease !important;
+  background: rgba(80,80,129,0.05) !important; border: 1px solid var(--border-soft) !important;
+  color: var(--text-sub) !important;
 }
-.streamlit-expanderHeader:hover { background: rgba(53,159,160,0.09) !important; }
+.streamlit-expanderHeader:hover { background: rgba(80,80,129,0.09) !important; }
 .streamlit-expanderContent {
   border: 1px solid var(--border-soft) !important; border-top: none !important;
   border-radius: 0 0 9px 9px !important;
 }
 
-/* ── CODE ── */
+/* ── Code ── */
 [data-testid="stCode"] pre {
-  background: rgba(53,159,160,0.06) !important; border-radius: 10px !important;
+  background: rgba(80,80,129,0.07) !important; border-radius: 10px !important;
 }
-[data-testid="stCode"] code { color: var(--primary-dark) !important; font-size: 0.79rem !important; }
+[data-testid="stCode"] code { color: var(--navy-mid) !important; font-size: 0.79rem !important; }
 
-/* ── DATAFRAME ── */
+/* ── Dataframe ── */
 div[data-testid="stDataFrame"] {
   border-radius: 12px !important; overflow: hidden !important;
   border: 1px solid var(--border) !important;
+  box-shadow: 0 2px 10px var(--shadow) !important;
 }
 
-/* ── INFO / WARN STRIPS ── */
+/* ── Info / Warn strips ── */
 .info-strip {
-  background: rgba(53,159,160,0.07); border-left: 4px solid var(--primary);
+  background: rgba(80,80,129,0.07); border-left: 4px solid var(--slate);
   border-radius: 0 8px 8px 0; padding: 9px 15px;
   font-size: 0.84rem; color: var(--text); margin-bottom: 9px;
 }
 .warn-strip {
-  background: rgba(255,140,82,0.07); border-left: 4px solid var(--accent);
+  background: rgba(108,99,255,0.07); border-left: 4px solid var(--accent);
   border-radius: 0 8px 8px 0; padding: 9px 15px;
   font-size: 0.84rem; color: var(--text); margin-bottom: 9px;
 }
 
-/* ── RESOURCE PILLS ── */
+/* ── Resource pills ── */
 .res-pill {
-  display: inline-block; background: rgba(53,159,160,0.11); color: var(--primary-dark);
-  padding: 2px 10px; border-radius: 99px; font-size: 0.78rem; font-weight: 600;
-  font-family: 'Fira Mono', monospace; margin: 2px; border: 1px solid rgba(53,159,160,0.2);
+  display: inline-block;
+  background: var(--navy);
+  color: #e8e8f8;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 0.76rem; font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  margin: 2px; border: 1px solid rgba(134,134,172,0.25);
+  letter-spacing: 0.02em;
 }
 
-/* ── TYPE BADGES ── */
+/* ── Type badges ── */
 .badge-r {
-  display: inline-block; background: rgba(138,214,209,0.28); color: #1E6A6B;
-  padding: 2px 8px; border-radius: 99px; font-size: 0.72rem; font-weight: 700;
+  display: inline-block; background: rgba(80,80,129,0.13); color: var(--navy-mid);
+  padding: 2px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.03em;
 }
 .badge-w {
-  display: inline-block; background: rgba(255,140,82,0.16); color: #C04800;
-  padding: 2px 8px; border-radius: 99px; font-size: 0.72rem; font-weight: 700;
+  display: inline-block; background: rgba(108,99,255,0.14); color: var(--navy);
+  padding: 2px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.03em;
 }
 
-/* ── GROUPED HEADER ── */
+/* ── Grouped header ── */
 .grp-hdr {
-  font-size: 0.87rem; font-weight: 700; color: var(--text);
-  background: var(--surface-2); border-radius: 8px; padding: 7px 13px;
-  margin-top: 11px; margin-bottom: 3px; border: 1px solid var(--border);
+  font-size: 0.87rem; font-weight: 700; color: #ffffff;
+  background: linear-gradient(135deg, var(--navy-mid), var(--navy));
+  border-radius: 8px; padding: 7px 14px;
+  margin-top: 11px; margin-bottom: 3px;
 }
 
-/* ── URL CHECKER CARDS ── */
+/* ── URL Checker cards ── */
 .url-card {
-  background: var(--surface); border: 1.5px solid var(--primary);
+  background: var(--surface-w); border: 1.5px solid var(--slate);
   border-radius: 12px; padding: 15px 18px; margin-bottom: 7px;
 }
 .url-field-lbl {
@@ -4476,39 +4484,39 @@ div[data-testid="stDataFrame"] {
   letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 2px;
 }
 .url-field-val {
-  font-family: monospace; font-size: 0.88rem; color: var(--text);
-  background: rgba(53,159,160,0.06); border: 1px solid var(--border-soft);
+  font-family: 'Inter', sans-serif; font-size: 0.86rem; color: var(--text);
+  background: rgba(80,80,129,0.06); border: 1px solid var(--border-soft);
   border-radius: 6px; padding: 6px 10px; word-break: break-all; margin-bottom: 9px;
 }
 .match-exact {
-  background: rgba(53,159,160,0.11); border: 1.5px solid var(--primary);
+  background: rgba(80,80,129,0.12); border: 1.5px solid var(--slate);
   border-radius: 8px; padding: 3px 11px; font-size: 0.77rem; font-weight: 700;
-  color: var(--primary-dark); display: inline-block; margin-bottom: 7px;
+  color: var(--navy-mid); display: inline-block; margin-bottom: 7px;
 }
 .match-fuzzy {
-  background: rgba(255,140,82,0.10); border: 1.5px solid var(--accent);
+  background: rgba(108,99,255,0.10); border: 1.5px solid var(--accent);
   border-radius: 8px; padding: 3px 11px; font-size: 0.77rem; font-weight: 700;
-  color: #C04800; display: inline-block; margin-bottom: 7px;
+  color: var(--navy); display: inline-block; margin-bottom: 7px;
 }
 
-/* ── SOURCE LABELS ── */
-.src-pat  { color: var(--primary-dark); font-weight: 700; font-size: 0.84rem; }
-.src-side { color: #7A4A00; font-weight: 700; font-size: 0.84rem; }
-.src-api  { color: #1E6A6B; font-weight: 700; font-size: 0.84rem; }
+/* ── Source labels ── */
+.src-pat  { color: var(--navy-mid); font-weight: 700; font-size: 0.84rem; }
+.src-side { color: var(--slate);    font-weight: 700; font-size: 0.84rem; }
+.src-api  { color: var(--navy);     font-weight: 700; font-size: 0.84rem; }
 
-/* ── BOOKMARK BAR ── */
+/* ── Bookmark bar ── */
 .bm-bar {
-  background: rgba(255,140,82,0.07); border: 1px solid rgba(255,140,82,0.22);
+  background: rgba(80,80,129,0.07); border: 1px solid rgba(80,80,129,0.20);
   border-radius: 8px; padding: 7px 13px; margin-bottom: 9px;
 }
 
-/* ── FOOTER ── */
+/* ── Footer ── */
 .app-footer {
   text-align: center; padding: 1.1rem 0 0.4rem;
   color: var(--text-muted); font-size: 0.7rem; letter-spacing: 0.02em;
   border-top: 1px solid var(--border-soft); margin-top: 2rem;
 }
-.app-footer strong { color: var(--primary-dark); font-weight: 600; }
+.app-footer strong { color: var(--navy-mid); font-weight: 600; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -5093,8 +5101,8 @@ def render_copyable_table(df: pd.DataFrame, flat_cols: list[str], height: int = 
     )
 
     TYPE_BADGE = {
-        "READ":  '<span style="background:#e8f5e9;color:#2e7d32;padding:1px 7px;border-radius:99px;font-size:.75rem;font-weight:700">READ</span>',
-        "WRITE": '<span style="background:#fff3e0;color:#e65100;padding:1px 7px;border-radius:99px;font-size:.75rem;font-weight:700">WRITE</span>',
+        "READ":  '<span style="background:rgba(80,80,129,0.13);color:#272757;padding:2px 9px;border-radius:5px;font-size:.73rem;font-weight:700;font-family:Inter,sans-serif;letter-spacing:.03em">READ</span>',
+        "WRITE": '<span style="background:rgba(108,99,255,0.14);color:#0F0E47;padding:2px 9px;border-radius:5px;font-size:.73rem;font-weight:700;font-family:Inter,sans-serif;letter-spacing:.03em">WRITE</span>',
     }
 
     rows_html = []
@@ -5110,8 +5118,7 @@ def render_copyable_table(df: pd.DataFrame, flat_cols: list[str], height: int = 
                     f'''<td class="ar-cell" data-val="{esc_val}"
                         title="Click to copy: {esc_val}"
                         onclick="copyAR(this)"
-                        style="font-family:monospace;font-weight:600;color:#283593;
-                               cursor:pointer;position:relative;">
+                        style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:600;color:#0F0E47;cursor:pointer;position:relative;">
                         <span class="ar-text">{esc_val}</span>
                         <span class="copy-icon">⎘</span>
                     </td>'''
@@ -5130,19 +5137,21 @@ def render_copyable_table(df: pd.DataFrame, flat_cols: list[str], height: int = 
 
     html = f"""
 <style>
-  .ct-wrap {{overflow-x:auto;max-height:{table_h}px;border:1px solid #e4e8ef;border-radius:10px}}
-  .ct-wrap table {{border-collapse:collapse;width:100%;font-size:.85rem;font-family:Arial,sans-serif}}
-  .ct-wrap thead th {{position:sticky;top:0;background:#f4f6fa;color:#333;font-weight:700;
-    font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;
-    padding:8px 12px;border-bottom:2px solid #d0d8e8;text-align:left}}
-  .ct-wrap tbody tr:hover {{background:#f7f9ff}}
-  .ct-wrap tbody td {{padding:7px 12px;border-bottom:1px solid #eef0f5;vertical-align:middle;color:#1a1a2e}}
-  .ar-cell:hover {{background:#eef2ff !important}}
+  .ct-wrap {{overflow-x:auto;max-height:{table_h}px;border:1px solid rgba(80,80,129,0.20);border-radius:12px;box-shadow:0 2px 10px rgba(15,14,71,0.10)}}
+  .ct-wrap table {{border-collapse:collapse;width:100%;font-size:.83rem;font-family:Inter,-apple-system,sans-serif}}
+  .ct-wrap thead th {{position:sticky;top:0;background:linear-gradient(135deg,#272757,#0F0E47);color:rgba(255,255,255,0.82);font-weight:700;
+    font-size:.71rem;text-transform:uppercase;letter-spacing:.06em;
+    padding:10px 13px;border-bottom:none;text-align:left}}
+  .ct-wrap tbody tr {{transition:background .12s ease}}
+  .ct-wrap tbody tr:hover {{background:rgba(80,80,129,0.07)}}
+  .ct-wrap tbody tr:nth-child(even) {{background:rgba(80,80,129,0.03)}}
+  .ct-wrap tbody td {{padding:8px 13px;border-bottom:1px solid rgba(80,80,129,0.10);vertical-align:middle;color:#1A1A3E}}
+  .ar-cell:hover {{background:rgba(80,80,129,0.09) !important}}
   .ar-cell:hover .copy-icon {{opacity:1}}
-  .copy-icon {{opacity:0;margin-left:6px;font-size:.85rem;color:#1a73e8;transition:opacity .15s}}
-  .copy-ok {{color:#2e7d32 !important}}
-  .toast {{position:fixed;bottom:24px;right:24px;background:#1a73e8;color:#fff;
-    padding:8px 18px;border-radius:8px;font-size:.88rem;font-weight:600;
+  .copy-icon {{opacity:0;margin-left:6px;font-size:.82rem;color:#505081;transition:opacity .15s}}
+  .copy-ok {{color:#272757 !important}}
+  .toast {{position:fixed;bottom:24px;right:24px;background:#272757;color:#fff;
+    padding:8px 18px;border-radius:8px;font-size:.86rem;font-weight:600;
     z-index:9999;opacity:0;transition:opacity .2s;pointer-events:none}}
   .toast.show {{opacity:1}}
 </style>
