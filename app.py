@@ -4316,8 +4316,24 @@ html, body, [class*="css"] {
 /* ── Typography ── */
 h1 { font-size: 1.45rem !important; font-weight: 700 !important; color: var(--text) !important; margin-bottom: 0 !important; }
 h2 { font-size: 1.1rem !important; font-weight: 700 !important; color: var(--navy-mid) !important; }
-h3 { font-size: 0.95rem !important; font-weight: 700 !important; color: var(--navy-mid) !important; }
-h4 { font-size: 0.88rem !important; font-weight: 800 !important; text-transform: uppercase !important; color: var(--navy-mid) !important; margin: 0 !important; }
+h3, h4 {
+  display: inline-block !important;
+  background: linear-gradient(135deg, var(--navy-mid) 0%, var(--navy) 100%) !important;
+  color: rgba(255,255,255,0.92) !important;
+  padding: 5px 16px !important;
+  border-radius: 8px !important;
+  font-size: 0.88rem !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+  letter-spacing: 0.01em !important;
+  margin: 0 0 6px 0 !important;
+  transition: transform 0.18s ease, box-shadow 0.18s ease !important;
+  cursor: default !important;
+}
+h3:hover, h4:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 14px rgba(15,14,71,0.22) !important;
+}
 hr  { border: none !important; border-top: 1px solid var(--border-soft) !important; margin: 0.45rem 0 1rem 0 !important; }
 .stCaption, [data-testid="stCaptionContainer"] p {
   font-size: 0.71rem !important; color: var(--text-muted) !important;
@@ -4499,10 +4515,25 @@ div[data-testid="stDataFrame"] {
   color: var(--navy); display: inline-block; margin-bottom: 7px;
 }
 
-/* ── Source labels ── */
-.src-pat  { color: var(--navy-mid); font-weight: 700; font-size: 0.84rem; }
-.src-side { color: var(--slate);    font-weight: 700; font-size: 0.84rem; }
-.src-api  { color: var(--navy);     font-weight: 700; font-size: 0.84rem; }
+/* ── Source result headings — block style with transition ── */
+.src-pat, .src-side, .src-api {
+  display: block;
+  background: linear-gradient(135deg, var(--navy-mid) 0%, var(--navy) 100%);
+  color: rgba(255,255,255,0.90) !important;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-top: 14px;
+  margin-bottom: 7px;
+  letter-spacing: 0.02em;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  cursor: default;
+}
+.src-pat:hover, .src-side:hover, .src-api:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(15,14,71,0.20);
+}
 
 /* ── Bookmark bar ── */
 .bm-bar {
