@@ -4174,7 +4174,9 @@ html, body, [class*="css"] {
 .block-container {
   padding-top: 0 !important;
   padding-bottom: 3rem !important;
-  max-width: 1080px !important;
+  padding-left: 2rem !important;
+  padding-right: 2rem !important;
+  max-width: 1100px !important;
 }
 
 /* ── Hide Streamlit chrome ── */
@@ -4232,36 +4234,45 @@ html, body, [class*="css"] {
   letter-spacing: 0.06em !important; text-transform: uppercase !important;
 }
 
-/* ══ NAV TABS ════════════════════════════════════════════════════ */
+/* ══ NAV TABS — solid card blocks ═══════════════════════════════ */
 .stTabs [data-baseweb="tab-list"] {
   background: transparent !important;
-  border-bottom: 2px solid var(--border) !important;
-  gap: 4px !important; padding: 0 !important; margin-bottom: 1.2rem !important;
+  border-bottom: none !important;
+  gap: 8px !important;
+  padding: 0 !important;
+  margin-bottom: 1.4rem !important;
+  flex-wrap: nowrap !important;
 }
 .stTabs [data-baseweb="tab"] {
-  background: transparent !important;
-  border: none !important;
-  border-bottom: 3px solid transparent !important;
-  border-radius: 0 !important;
-  padding: 10px 16px !important;
-  margin-bottom: -2px !important;
-  font-size: 0.84rem !important; font-weight: 600 !important;
+  background: var(--surface) !important;
+  border: 1.5px solid var(--border) !important;
+  border-radius: 10px !important;
+  padding: 10px 14px !important;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
   color: var(--text-2) !important;
-  transition: color 0.15s ease, border-color 0.15s ease !important;
+  transition: all 0.18s ease !important;
+  flex: 1 !important;
+  text-align: center !important;
 }
 .stTabs [data-baseweb="tab"]:hover {
+  background: var(--surface-2) !important;
+  border-color: var(--slate) !important;
   color: var(--navy-mid) !important;
-  border-bottom-color: var(--slate) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 3px 10px var(--shadow) !important;
 }
 .stTabs [aria-selected="true"] {
-  color: var(--navy) !important;
-  border-bottom: 3px solid var(--navy) !important;
+  background: var(--navy) !important;
+  border-color: var(--navy) !important;
+  color: #ffffff !important;
   font-weight: 700 !important;
-  background: transparent !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 14px rgba(15,14,71,0.25) !important;
 }
 .stTabs [data-baseweb="tab-highlight"],
 .stTabs [data-baseweb="tab-border"] { display: none !important; }
-.stTabs [data-baseweb="tab-panel"] { padding-top: 0.2rem !important; }
+.stTabs [data-baseweb="tab-panel"] { padding-top: 0.4rem !important; }
 
 /* ══ SECTION LABELS ══════════════════════════════════════════════ */
 /* sec-lbl — small field label above inputs */
@@ -4282,25 +4293,26 @@ html, body, [class*="css"] {
   display: block !important;
   font-size: 0.88rem !important;
   font-weight: 700 !important;
-  color: var(--navy-mid) !important;
-  padding: 0 0 6px 0 !important;
-  margin: 4px 0 6px 0 !important;
-  border-bottom: 2px solid var(--border) !important;
+  color: rgba(255,255,255,0.90) !important;
+  background: linear-gradient(135deg, var(--navy-mid) 0%, var(--navy) 100%) !important;
+  padding: 7px 14px !important;
+  margin: 8px 0 !important;
+  border-radius: 8px !important;
   text-transform: none !important;
-  background: transparent !important;
-  border-left: none !important;
-  border-radius: 0 !important;
+  border: none !important;
 }
 
 /* Source labels in Search All — same visual as regular headings */
 .src-pat, .src-side, .src-api {
   display: block;
-  font-size: 0.84rem;
+  background: linear-gradient(135deg, var(--navy-mid) 0%, var(--navy) 100%);
+  color: rgba(255,255,255,0.90) !important;
+  font-size: 0.81rem;
   font-weight: 700;
-  color: var(--navy-mid) !important;
-  padding: 0 0 5px 0;
+  padding: 8px 14px;
+  border-radius: 8px;
   margin: 14px 0 6px 0;
-  border-bottom: 2px solid var(--border);
+  letter-spacing: 0.01em;
 }
 
 /* ══ TYPOGRAPHY ══════════════════════════════════════════════════ */
@@ -4338,9 +4350,39 @@ input::placeholder, textarea::placeholder { color: var(--text-3) !important; fon
 .stMultiSelect > div > div {
   border-radius: 8px !important; border: 1px solid var(--border) !important; background: var(--surface) !important;
 }
+/* Kill ALL orange/red default tag colors */
 .stMultiSelect [data-baseweb="tag"] {
-  background: rgba(80,80,129,0.10) !important; color: var(--navy-mid) !important;
-  border-radius: 5px !important; font-size: 0.73rem !important; font-weight: 500 !important;
+  background: rgba(39,39,87,0.12) !important;
+  color: var(--navy-mid) !important;
+  border: 1px solid rgba(80,80,129,0.22) !important;
+  border-radius: 5px !important;
+  font-size: 0.73rem !important;
+  font-weight: 600 !important;
+}
+.stMultiSelect [data-baseweb="tag"] span {
+  color: var(--navy-mid) !important;
+}
+.stMultiSelect [data-baseweb="tag"] [data-testid="stMarkdownContainer"],
+.stMultiSelect [data-baseweb="tag"] button,
+.stMultiSelect [data-baseweb="tag"] svg {
+  color: var(--slate) !important;
+  fill: var(--slate) !important;
+}
+/* Also kill Streamlit's default chip/tag orange in all multiselects */
+span[data-baseweb="tag"] {
+  background: rgba(39,39,87,0.12) !important;
+  border: 1px solid rgba(80,80,129,0.22) !important;
+}
+span[data-baseweb="tag"] span { color: var(--navy-mid) !important; }
+/* Newer Streamlit wrapper name — same navy tags, no red/orange */
+[data-testid="stMultiSelect"] [data-baseweb="tag"] {
+  background: rgba(39,39,87,0.12) !important;
+  border: 1px solid rgba(80,80,129,0.22) !important;
+  color: var(--navy-mid) !important;
+}
+[data-testid="stMultiSelect"] [data-baseweb="tag"] span,
+[data-testid="stMultiSelect"] [data-baseweb="tag"] svg {
+  color: var(--navy-mid) !important; fill: var(--navy-mid) !important;
 }
 
 /* ══ BUTTONS ═════════════════════════════════════════════════════ */
@@ -4372,8 +4414,11 @@ input::placeholder, textarea::placeholder { color: var(--text-3) !important; fon
 
 /* ══ METRICS ═════════════════════════════════════════════════════ */
 [data-testid="metric-container"] {
-  background: var(--surface) !important; border: 1px solid var(--border) !important;
-  border-radius: 10px !important; padding: 10px 14px !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  padding: 12px 16px !important;
+  box-shadow: 0 1px 4px var(--shadow) !important;
 }
 [data-testid="metric-container"] label {
   font-size: 0.70rem !important; color: var(--text-3) !important;
@@ -4431,8 +4476,12 @@ div[data-testid="stDataFrame"] {
 .info-strip {
   background: rgba(80,80,129,0.06);
   border-left: 3px solid var(--slate);
-  border-radius: 0 7px 7px 0;
-  padding: 8px 14px; font-size: 0.83rem; color: var(--text); margin-bottom: 8px;
+  border-radius: 0 8px 8px 0;
+  padding: 10px 16px;
+  font-size: 0.83rem;
+  color: var(--text);
+  margin-bottom: 12px;
+  line-height: 1.5;
 }
 .warn-strip {
   background: rgba(108,99,255,0.06);
@@ -4443,11 +4492,14 @@ div[data-testid="stDataFrame"] {
 
 /* ══ GROUPED RESOURCE HEADER ═════════════════════════════════════ */
 .grp-hdr {
-  font-size: 0.84rem; font-weight: 700; color: var(--navy);
-  background: var(--surface-2);
-  border-left: 3px solid var(--navy-mid);
-  border-radius: 0 8px 8px 0;
-  padding: 7px 14px; margin-top: 12px; margin-bottom: 4px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.92);
+  background: linear-gradient(135deg, var(--navy-mid) 0%, var(--navy) 100%);
+  border-radius: 8px;
+  padding: 8px 14px;
+  margin-top: 14px;
+  margin-bottom: 4px;
 }
 
 /* ══ URL CHECKER CARDS ═══════════════════════════════════════════ */
